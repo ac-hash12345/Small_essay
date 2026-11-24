@@ -23,13 +23,25 @@
     .dict{position:fixed;inset:auto 14px 14px auto;z-index:50;width:min(380px,calc(100vw - 28px));background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 22px 70px rgba(16,42,67,.24);padding:17px;display:none}.dict.show{display:block}.dicthead{display:flex;align-items:center;gap:10px}.dictword{font:700 24px Georgia,serif}.phon{color:var(--muted)}.close{margin-left:auto;border:0;background:#eef2f7;border-radius:50%;width:34px;height:34px;cursor:pointer}.meaning{margin:12px 0}.context{padding:10px 12px;background:#f4f8fb;border-radius:10px;color:#486581;font-size:14px}.vocab{margin-top:10px}
     textarea{width:100%;min-height:270px;border:1px solid var(--line);border-radius:14px;padding:15px;resize:vertical;outline:none}.score{margin-top:12px;padding:12px;border-radius:12px;background:#f1f5f9}.answer{white-space:pre-wrap;font-family:Georgia,serif;font-size:18px;line-height:1.75;padding:18px;background:#f8fafc;border-radius:14px;display:none}.answer.show{display:block}.vocabList{display:grid;gap:9px}.vrow{display:flex;gap:10px;align-items:center;padding:11px;border:1px solid var(--line);border-radius:11px}.vrow b{min-width:110px}.vrow button{margin-left:auto}
     .notice{font-size:13px;color:var(--muted);margin-top:16px}.loading{padding:80px;text-align:center;color:var(--muted)}
-    @media(max-width:760px){.topin{padding:10px 14px}.topin{gap:8px}.nav-toggle.btn{padding:6px 8px}.progress{min-width:74px}.brand small{display:none}.layout{display:block;padding:12px}.side{position:relative;top:0;height:230px;margin-bottom:12px}.main{padding:17px}h1{font-size:23px}.toolbar{gap:7px}.btn{padding:8px 10px}.en{font-size:18px}.dict{bottom:10px;left:10px;right:10px;width:auto}}
+    .sentence .sentence-star{top:51px;color:var(--muted)}
+    .sentence .sentence-star[aria-pressed="true"]{color:#a26000;background:#fff2cc;border-color:#e0b450}
+    .sentence:has(.sentence-star){min-height:98px}
+    #theme-toggle{flex:none;padding:6px 9px}
+    #word-note{margin:0 0 10px;color:var(--muted);font-size:14px}
+    #audio-status:empty{display:none}
+    .dark{color-scheme:dark;--ink:#edf4ff;--muted:#a8bfd9;--line:#3b526f;--paper:#101b2a;--card:#182638;--blue:#78aaff;--soft:#223c5e;--green:#177a59;--shadow:none}
+    .dark .top{background:#101b2a}.dark .btn,.dark .speed,.dark .dict{background:var(--card)}
+    .dark .btn.primary{background:#2855a0;color:white}.dark .btn.green{background:var(--green);color:white}
+    .dark .essay:hover,.dark .context,.dark .score,.dark .answer,.dark .reciteAnswer,.dark .close{background:var(--soft)}
+    .dark .essay.active,.dark .sentence>.btn,.dark .en,.dark .zh,.dark .reciteZh,.dark .reciteAnswer,.dark .context{color:var(--ink)}
+    .dark .sentence-star[aria-pressed="true"]{color:#ffdb83;background:#473818}
+    @media(max-width:760px){.topin{padding:10px 14px}.topin{gap:6px}.brand{font-size:16px}.nav-toggle.btn{padding:6px 8px}.progress{min-width:74px}.brand small{display:none}.layout{display:block;padding:12px}.side{position:relative;top:0;height:230px;margin-bottom:12px}.main{padding:17px}h1{font-size:23px}.toolbar{gap:7px}.btn{padding:8px 10px}.en{font-size:18px}.dict{bottom:10px;left:10px;right:10px;width:auto}}
   </style>
 </head>
 <body>
-<div class="app"><header class="top"><div class="topin"><button class="btn nav-toggle" id="nav-toggle" type="button" aria-controls="essay-nav" aria-expanded="true">收起目录</button><div class="brand">考研英语作文背诵助手<small>逐句理解 · 听读 · 挖空 · 默写</small></div><div class="progress"><div class="bar"><i id="pbar"></i></div><div class="ptxt" id="ptxt">学习进度 0%</div></div></div></header>
+<div class="app"><header class="top"><div class="topin"><button class="btn nav-toggle" id="nav-toggle" type="button" aria-controls="essay-nav" aria-expanded="true">收起目录</button><div class="brand">考研英语作文背诵助手<small>逐句理解 · 听读 · 挖空 · 默写</small></div><div class="progress"><div class="bar"><i id="pbar"></i></div><div class="ptxt" id="ptxt">学习进度 0%</div></div><button class="btn" id="theme-toggle" type="button" aria-pressed="false" onclick="toggleTheme()">深色</button></div></header>
 <div class="layout"><aside class="panel side" id="essay-nav" aria-label="作文目录"><div class="search"><input id="search" placeholder="搜索作文类型或内容"></div><div class="list" id="list"></div></aside><main class="panel main" id="main"><div class="loading">正在整理作文内容…</div></main></div></div>
-<div class="dict" id="dict"><div class="dicthead"><div class="dictword" id="dictword"></div><div class="phon" id="phon"></div><button class="close" onclick="closeDict()">×</button></div><div class="meaning" id="meaning">正在查询中文释义…</div><div class="context" id="context"></div><div class="vocab"><button class="btn primary" id="addVocab">加入生词本</button> <button class="btn" id="speakWord">听发音</button></div></div>
+<div class="dict" id="dict"><div class="dicthead"><div class="dictword" id="dictword"></div><div class="phon" id="phon"></div><button class="close" onclick="closeDict()">×</button></div><div class="meaning" id="meaning"></div><div id="word-note" hidden></div><div class="context" id="context"></div><div class="vocab"><button class="btn primary" id="addVocab">加入生词本</button> <button class="btn" id="speakWord">听发音</button></div></div>
 <script>
 const S={essays:[],current:0,tab:'study',hideZh:false,rate:.9,speaking:false};
 const $=s=>document.querySelector(s), esc=s=>(s||'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]));
@@ -56,29 +68,855 @@ function parse(txt){
  if(cur)out.push(cur); return out.filter(e=>e.pairs.length||e.full.length)
 }
 function fullText(e){return (e.full.length?e.full:e.pairs.map(p=>p.en)).join('\n\n')}
-function wordsHtml(text,ctx){return esc(text).replace(/([A-Za-z]+(?:['’\-][A-Za-z]+)*)/g,w=>`<span class="word" data-word="${w}" data-context="${esc(ctx)}">${w}</span>`)}
-function renderList(q=''){const list=S.essays.map((e,i)=>({e,i})).filter(o=>(o.e.title+' '+fullText(o.e)).toLowerCase().includes(q.toLowerCase()));$('#list').innerHTML=list.map(o=>`<button class="essay ${o.i===S.current?'active':''}" data-i="${o.i}"><b>${esc(o.e.title)}</b><span>${o.e.pairs.length} 个对照句</span></button>`).join('');document.querySelectorAll('.essay').forEach(b=>b.onclick=()=>{S.current=+b.dataset.i;S.tab='study';render()})}
+function wordsHtml(text,ctx){return text.split(/([A-Za-z]+(?:['’\-][A-Za-z]+)*)/g).map((w,i)=>i%2===0?esc(w):`<span class="word" data-word="${w}" data-context="${esc(ctx)}">${w}</span>`).join('')}
+function renderList(q=''){const list=S.essays.map((e,i)=>({e,i})).filter(o=>(o.e.title+' '+fullText(o.e)).toLowerCase().includes(q.toLowerCase()));$('#list').innerHTML=list.map(o=>`<button class="essay ${o.i===S.current?'active':''}" data-i="${o.i}"><b>${esc(o.e.title)}</b><span>${o.e.pairs.length} 个对照句</span></button>`).join('');document.querySelectorAll('.essay').forEach(b=>b.onclick=()=>{stopSpeak();S.current=+b.dataset.i;S.tab='study';render()})}
 function render(){renderList($('#search').value);const e=S.essays[S.current];if(!e)return;let content='';
- if(S.tab==='study')content=`<div class="${S.hideZh?'hidezh':''}">${e.pairs.map((p,i)=>`<div class="sentence"><div class="en">${wordsHtml(p.en,p.zh)}</div><div class="zh">${esc(p.zh)}</div><button class="btn sentenceSpeak" title="朗读本句" aria-label="朗读本句" data-sentence="${encodeURIComponent(p.en)}">🔊</button></div>`).join('')}</div>`;
+ if(S.tab==='study')content=`<div class="${S.hideZh?'hidezh':''}">${e.pairs.map((p,i)=>`<div class="sentence"><div class="en">${wordsHtml(p.en,p.zh)}</div><div class="zh">${esc(p.zh)}</div><button class="btn sentenceSpeak" title="朗读本句" aria-label="朗读本句" data-index="${i}">🔊</button><button class="btn sentence-star" type="button" data-index="${i}" onclick="toggleStar(this)"></button></div>`).join('')}</div>`;
  if(S.tab==='recite')content=`<div class="toolbar"><button class="btn" onclick="toggleAllRecite(true)">显示全部英文</button><button class="btn" onclick="toggleAllRecite(false)">隐藏全部英文</button></div>${e.pairs.map((p,i)=>`<div class="reciteRow"><div class="reciteZh">${esc(p.zh)}</div><button class="btn" onclick="document.getElementById('ra${i}').classList.toggle('show')">看答案</button><div class="reciteAnswer" id="ra${i}">${wordsHtml(p.en,p.zh)}</div></div>`).join('')}`;
  if(S.tab==='cloze')content=e.pairs.map((p,i)=>`<div class="sentence"><div class="en">${cloze(p.en,i)}</div><div class="zh">${esc(p.zh)}</div></div>`).join('')+`<p class="notice">点击横线可显示或隐藏单词。</p>`;
  if(S.tab==='dictation')content=`<textarea id="writing" placeholder="根据中文或记忆，在这里默写英文全文…"></textarea><div class="toolbar"><button class="btn green" onclick="checkWriting()">核对默写</button><button class="btn" onclick="toggleAnswer()">显示参考答案</button><button class="btn" onclick="clearWriting()">清空</button></div><div class="score" id="score" style="display:none"></div><div class="answer" id="answer">${esc(fullText(e))}</div>`;
  if(S.tab==='vocab')content=renderVocab();
- $('#main').innerHTML=`<h1>${esc(e.title)}</h1><div class="meta">${esc(e.source)} · 共 ${e.pairs.length} 个对照句</div><div class="toolbar"><button class="btn primary" onclick="speakText(fullText(S.essays[S.current]))">朗读全文</button><button class="btn" onclick="stopSpeak()">停止</button><select class="speed" onchange="S.rate=+this.value"><option value=".75">0.75×</option><option value=".9" selected>0.9×</option><option value="1">1.0×</option><option value="1.15">1.15×</option></select><button class="btn" onclick="toggleZh()">${S.hideZh?'显示翻译':'隐藏翻译'}</button><button class="btn green" onclick="markDone()">标记已掌握</button></div><div class="tabs">${[['study','逐句背诵'],['recite','全文背诵'],['cloze','关键词挖空'],['dictation','全文默写'],['vocab','生词本']].map(t=>`<button class="tab ${S.tab===t[0]?'active':''}" data-tab="${t[0]}">${t[1]}</button>`).join('')}</div><div id="content">${content}</div><p class="notice">提示：点击任意英文单词，可查看中文释义、音标并听发音。朗读为 AI 合成语音。</p>`;
- document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;render()});document.querySelectorAll('.sentenceSpeak').forEach(b=>b.onclick=()=>speakText(decodeURIComponent(b.dataset.sentence))); bindWords();updateProgress();
+ $('#main').innerHTML=`<h1>${esc(e.title)}</h1><div class="meta">${esc(e.source)} · 共 ${e.pairs.length} 个对照句</div><div class="toolbar"><button class="btn primary" onclick="speakTrack(fullText(S.essays[S.current]),'full')">朗读全文</button><button class="btn" onclick="stopSpeak()">停止</button><select class="speed" aria-label="朗读语速" onchange="setRate(this.value)"><option value="0.75">0.75×</option><option value="0.9">0.9×</option><option value="1">1.0×</option><option value="1.15">1.15×</option></select><button class="btn" onclick="toggleZh()">${S.hideZh?'显示翻译':'隐藏翻译'}</button><button class="btn green" id="done-toggle" onclick="markDone()">标记已掌握</button></div><div id="audio-status" class="notice" role="status"></div><div class="tabs">${[['study','逐句背诵'],['recite','全文背诵'],['cloze','关键词挖空'],['dictation','全文默写'],['vocab','生词本']].map(t=>`<button class="tab ${S.tab===t[0]?'active':''}" data-tab="${t[0]}">${t[1]}</button>`).join('')}</div><div id="content">${content}</div><p class="notice">提示：点击英文单词可查词，点击 ☆ 可标记难句。</p>`;
+ document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;render()});document.querySelectorAll('.sentenceSpeak').forEach(button => {
+   const index = Number(button.dataset.index);
+   button.onclick = () => speakTrack(e.pairs[index].en, 's' + (index + 1));
+ });
+ const stars = readLocal('essay_stars', {});
+ document.querySelectorAll('.sentence-star').forEach(button => updateStar(button, Boolean(stars[e.source + ':' + button.dataset.index])));
+ $('.speed').value = String(S.rate);
+ const writing = $('#writing');
+ if (writing) {
+   const key = draftKey();
+   writing.value = readLocal(key, '');
+   writing.addEventListener('input', () => writeLocal(key, writing.value));
+ }
+ bindWords();
+ updateProgress();
 }
 function cloze(text,seed){let n=0;return esc(text).replace(/([A-Za-z]+(?:['’\-][A-Za-z]+)*)/g,w=>{n++;let hide=w.length>5&&(n+seed)%3===0;return hide?`<span class="clozeWord" onclick="this.classList.toggle('reveal')">${w}</span>`:w})}
 function toggleAllRecite(show){document.querySelectorAll('.reciteAnswer').forEach(x=>x.classList.toggle('show',show));bindWords()}
 function bindWords(){document.querySelectorAll('.word').forEach(w=>w.onclick=()=>openDict(w.dataset.word,w.dataset.context))}
-function wordCache(){return JSON.parse(localStorage.getItem('essay_word_cache')||'{}')}function saveWord(key,data){let c=wordCache();c[key]={...(c[key]||{}),...data};localStorage.setItem('essay_word_cache',JSON.stringify(c))}
-function timedFetch(url,ms=3500){let c=new AbortController(),id=setTimeout(()=>c.abort(),ms);return fetch(url,{signal:c.signal}).then(r=>r.json()).finally(()=>clearTimeout(id))}
-async function openDict(word,ctx){let key=word.toLowerCase(),cached=wordCache()[key]||{},local=LOCAL_ZH[key];$('#dictword').textContent=word;$('#phon').textContent=cached.phon||'';$('#meaning').textContent=local||cached.zh||'基础词，可结合下方句子理解。';$('#context').textContent='所在句译文：'+ctx;$('#dict').classList.add('show');$('#speakWord').onclick=()=>speakText(word);$('#addVocab').onclick=()=>addVocab(key,word,ctx,$('#meaning').textContent);
- if(!cached.phon)timedFetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(key),2500).then(d=>{if(Array.isArray(d)){let x=d[0],phon=x.phonetic||x.phonetics?.find(p=>p.text)?.text||'';$('#phon').textContent=phon;saveWord(key,{phon})}}).catch(()=>{});
+const preferences = readLocal('essay_preferences', {});
+S.rate = [0.75, 0.9, 1, 1.15].includes(preferences.rate) ? preferences.rate : 0.9;
+document.documentElement.classList.toggle('dark', preferences.dark === true);
+$('#theme-toggle').setAttribute('aria-pressed', String(preferences.dark === true));
+
+function readLocal(key, fallback) {
+  try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
+  catch { return fallback; }
 }
-function closeDict(){$('#dict').classList.remove('show')} function speakText(text){if(!('speechSynthesis'in window)){alert('当前内置浏览器不支持网页朗读，请选择“在浏览器中打开”，使用 Chrome 访问。');return}let synth=window.speechSynthesis;synth.cancel();synth.resume();let run=()=>{let u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=S.rate;u.volume=1;let vs=synth.getVoices(),v=vs.find(v=>v.lang.startsWith('en-US')&&/Samantha|Ava|Jenny|Aria|Female|Google US English/i.test(v.name))||vs.find(v=>v.lang.startsWith('en-US'))||vs.find(v=>v.lang.startsWith('en'));if(v)u.voice=v;u.onerror=()=>alert('当前页面无法调用语音，请用 Chrome 打开此网址后重试。');synth.speak(u)};setTimeout(run,80)}function stopSpeak(){if('speechSynthesis'in window)speechSynthesis.cancel()}
-function toggleZh(){S.hideZh=!S.hideZh;render()} function vocab(){return JSON.parse(localStorage.getItem('essay_vocab')||'[]')} function addVocab(key,word,ctx,meaning){let v=vocab();if(!v.some(x=>x.key===key))v.unshift({key,word,ctx,meaning});localStorage.setItem('essay_vocab',JSON.stringify(v));$('#addVocab').textContent='已加入生词本'}
-function renderVocab(){let v=vocab();return `<div class="vocabList">${v.length?v.map((x,i)=>`<div class="vrow"><b>${esc(x.word)}</b><span>${esc(x.meaning)}</span><button class="btn" onclick="removeVocab(${i})">移除</button></div>`).join(''):'还没有生词。背诵时点击单词即可添加。'}</div>`}function removeVocab(i){let v=vocab();v.splice(i,1);localStorage.setItem('essay_vocab',JSON.stringify(v));render()}
-function norm(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().split(/\s+/)}function checkWriting(){let a=norm(fullText(S.essays[S.current])),b=norm($('#writing').value),hit=b.filter((x,i)=>x===a[i]).length,score=Math.round(hit/Math.max(a.length,1)*100);$('#score').style.display='block';$('#score').innerHTML=`顺序匹配度：<b>${score}%</b>。建议对照参考答案检查拼写和漏句。`}function toggleAnswer(){$('#answer').classList.toggle('show')}function clearWriting(){$('#writing').value='';$('#score').style.display='none'}
-function done(){return JSON.parse(localStorage.getItem('essay_done')||'[]')}function markDone(){let d=done(),i=S.current;if(d.includes(i))d=d.filter(x=>x!==i);else d.push(i);localStorage.setItem('essay_done',JSON.stringify(d));updateProgress()}function updateProgress(){let p=Math.round(done().length/Math.max(S.essays.length,1)*100);$('#pbar').style.width=p+'%';$('#ptxt').textContent=`学习进度 ${p}%`}
-$('#search').oninput=e=>renderList(e.target.value);fetch('source.txt').then(r=>r.text()).then(t=>{S.essays=parse(t);renderList();render()}).catch(()=>$('#main').innerHTML='<div class="empty">作文内容加载失败，请刷新页面。</div>');
+
+function writeLocal(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); }
+  catch { /* The current session remains usable if storage is unavailable. */ }
+}
+
+function setRate(value) {
+  S.rate = preferences.rate = Number(value);
+  if (activeAudio) activeAudio.playbackRate = S.rate;
+  writeLocal('essay_preferences', preferences);
+}
+
+function toggleTheme() {
+  preferences.dark = !preferences.dark;
+  document.documentElement.classList.toggle('dark', preferences.dark);
+  $('#theme-toggle').setAttribute('aria-pressed', String(preferences.dark));
+  writeLocal('essay_preferences', preferences);
+}
+
+function draftKey() {
+  return 'essay_draft:' + S.essays[S.current].source;
+}
+
+function toggleStar(button) {
+  const stars = readLocal('essay_stars', {});
+  const key = S.essays[S.current].source + ':' + button.dataset.index;
+  const starred = !stars[key];
+  if (starred) stars[key] = true;
+  else delete stars[key];
+  writeLocal('essay_stars', stars);
+  updateStar(button, starred);
+}
+
+function updateStar(button, starred) {
+  button.setAttribute('aria-pressed', String(starred));
+  button.setAttribute('aria-label', starred ? '取消本句星标' : '标星本句');
+  button.textContent = starred ? '★' : '☆';
+}
+
+// US pronunciations from ipa-dict. See IPA-DICT-LICENSE.txt.
+const offlineIpa = {
+  "a": "/ˈeɪ/, /ə/",
+  "abilities": "/əˈbɪɫəˌtiz/",
+  "ability": "/əˈbɪɫəˌti/",
+  "able": "/ˈeɪbəɫ/",
+  "about": "/əˈbaʊt/",
+  "abundant": "/əˈbəndənt/",
+  "academic": "/ˌækəˈdɛmɪk/",
+  "accident": "/ˈæksədənt/",
+  "account": "/əˈkaʊnt/",
+  "achieve": "/əˈtʃiv/",
+  "achieved": "/əˈtʃivd/",
+  "act": "/ˈækt/",
+  "acting": "/ˈæktɪŋ/",
+  "active": "/ˈæktɪv/",
+  "activities": "/ækˈtɪvətiz/, /ækˈtɪvɪtiz/",
+  "activity": "/ækˈtɪvəti/, /ækˈtɪvɪti/",
+  "addition": "/əˈdɪʃən/",
+  "afford": "/əˈfɔɹd/",
+  "after": "/ˈæftɝ/",
+  "again": "/əˈɡeɪn/, /əˈɡɛn/",
+  "agree": "/əˈɡɹi/",
+  "agreed": "/əˈɡɹid/",
+  "agrees": "/əˈɡɹiz/",
+  "aid": "/ˈeɪd/",
+  "alexander": "/ˌæɫəɡˈzændɝ/, /ˌæɫɪɡˈzændɝ/",
+  "all": "/ˈɔɫ/",
+  "allocate": "/ˈæɫəˌkeɪt/",
+  "allocated": "/ˈæɫəˌkeɪtɪd/",
+  "also": "/ˈɔɫsoʊ/",
+  "although": "/ˌɔɫˈðoʊ/",
+  "am": "/ˈæm/, /ˈeɪˈɛm/",
+  "ample": "/ˈæmpəɫ/",
+  "an": "/ˈæn/, /ən/",
+  "ancient": "/ˈeɪnʃənt/, /ˈeɪntʃənt/",
+  "and": "/ˈænd/, /ənd/",
+  "annual": "/ˈænjuəɫ/",
+  "another": "/əˈnəðɝ/",
+  "answer": "/ˈænsɝ/",
+  "any": "/ˈɛni/",
+  "apologize": "/əˈpɑɫəˌdʒaɪz/",
+  "application": "/ˌæpɫəˈkeɪʃən/",
+  "applications": "/ˌæpɫəˈkeɪʃənz/",
+  "apply": "/əˈpɫaɪ/",
+  "appreciate": "/əˈpɹiʃiˌeɪt/",
+  "are": "/ˈɑɹ/, /ɝ/",
+  "area": "/ˈɛɹiə/",
+  "as": "/ˈæz/, /ˈɛz/",
+  "assistance": "/əˈsɪstəns/",
+  "at": "/ˈæt/",
+  "attach": "/əˈtætʃ/",
+  "attaching": "/əˈtætʃɪŋ/",
+  "attend": "/əˈtɛnd/",
+  "attending": "/əˈtɛndɪŋ/",
+  "attention": "/əˈtɛnʃən/",
+  "attitude": "/ˈætəˌtud/",
+  "autumn": "/ˈɔtəm/",
+  "available": "/əˈveɪɫəbəɫ/",
+  "bachelor's": "/ˈbætʃəɫɝz/, /ˈbætʃɫɝz/",
+  "bank": "/ˈbæŋk/",
+  "basis": "/ˈbeɪsəs/, /ˈbeɪsɪs/",
+  "be": "/ˈbi/, /bi/",
+  "been": "/ˈbɪn/, /bən/, /bɪn/",
+  "behalf": "/bɪˈhæf/",
+  "beijing": "/ˌbeɪˈʒɪŋ/",
+  "being": "/ˈbiɪŋ/",
+  "believe": "/bɪˈɫiv/",
+  "beneficial": "/ˌbɛnəˈfɪʃəɫ/",
+  "bike": "/ˈbaɪk/",
+  "board": "/ˈbɔɹd/",
+  "bound": "/ˈbaʊnd/",
+  "brought": "/ˈbɹɔt/",
+  "burden": "/ˈbɝdən/",
+  "burdens": "/ˈbɝdənz/",
+  "but": "/ˈbət/",
+  "by": "/ˈbaɪ/",
+  "campus": "/ˈkæmpəs/",
+  "can": "/ˈkæn/, /kən/",
+  "candidate": "/ˈkændədeɪt/, /ˈkænədɪt/",
+  "cannot": "/ˈkænɑt/, /kəˈnɑt/",
+  "cao": "/ˈkaʊ/",
+  "cause": "/ˈkɑz/, /ˈkɔz/",
+  "caused": "/ˈkɑzd/, /ˈkɔzd/",
+  "celebrities": "/səˈɫɛbɹɪtiz/",
+  "celebrity": "/səˈɫɛbɹɪti/",
+  "center": "/ˈsɛnɝ/, /ˈsɛntɝ/",
+  "character": "/ˈkɛɹɪktɝ/",
+  "characters": "/ˈkæɹəktɝz/, /ˈkɛɹəktɝz/",
+  "cheerful": "/ˈtʃɪɹfəɫ/",
+  "china": "/ˈtʃaɪnə/",
+  "chinese": "/tʃaɪˈniz/",
+  "class": "/ˈkɫæs/",
+  "classes": "/ˈkɫæsəz/, /ˈkɫæsɪz/",
+  "classic": "/ˈkɫæsɪk/",
+  "classical": "/ˈkɫæsɪkəɫ/",
+  "club": "/ˈkɫəb/",
+  "college": "/ˈkɑɫɪdʒ/",
+  "com": "/ˈkɑm/",
+  "come": "/ˈkəm/",
+  "coming": "/ˈkəmɪŋ/",
+  "command": "/kəˈmænd/",
+  "confucian": "/kənˈfjuʃən/",
+  "confucianism": "/kənˈfjuʃəˌnɪzəm/",
+  "confucius": "/kənˈfjuʃəs/",
+  "consequence": "/ˈkɑnsəkwəns/",
+  "consequences": "/ˈkɑnsəˌkwɛnsəz/",
+  "consideration": "/kənˌsɪdɝˈeɪʃən/",
+  "contact": "/ˈkɑnˌtækt/",
+  "contest": "/ˈkɑntɛst/, /kənˈtɛst/",
+  "contests": "/ˈkɑntɛs/, /ˈkɑntɛsts/, /kənˈtɛs/, /kənˈtɛsts/",
+  "contribute": "/kənˈtɹɪbjut/",
+  "contributing": "/kənˈtɹɪbjutɪŋ/",
+  "cordially": "/ˈkɔɹdʒəɫi/",
+  "could": "/ˈkʊd/",
+  "culture": "/ˈkəɫtʃɝ/",
+  "customer": "/ˈkəstəmɝ/",
+  "daily": "/ˈdeɪɫi/",
+  "date": "/ˈdeɪt/",
+  "daughter": "/ˈdɔtɝ/",
+  "day": "/ˈdeɪ/",
+  "deadline": "/ˈdɛdˌɫaɪn/",
+  "dear": "/ˈdɪɹ/",
+  "debate": "/dəˈbeɪt/",
+  "debates": "/dəˈbeɪts/",
+  "december": "/dɪˈsɛmbɝ/",
+  "degree": "/dɪˈɡɹi/",
+  "delayed": "/dɪˈɫeɪd/",
+  "demonstrate": "/ˈdɛmənˌstɹeɪt/",
+  "depict": "/dɪˈpɪkt/",
+  "depicts": "/dɪˈpɪks/, /dɪˈpɪkts/",
+  "details": "/ˈditeɪɫz/, /dɪˈteɪɫz/",
+  "develop": "/dɪˈvɛɫəp/",
+  "developing": "/dɪˈvɛɫəpɪŋ/",
+  "diagnosed": "/ˌdaɪəɡˈnoʊst/",
+  "direct": "/daɪˈɹɛkt/, /dɝˈɛkt/, /dɪˈɹɛkt/",
+  "directly": "/daɪˈɹɛkɫi/, /dɝˈɛktɫi/, /diˈɹɛkɫi/, /dɪˈɹɛkɫi/",
+  "disappointed": "/ˌdɪsəˈpɔɪnɪd/, /ˌdɪsəˈpɔɪntɪd/",
+  "disciple": "/dɪˈsaɪpəɫ/",
+  "disciples": "/dɪˈsaɪpəɫz/",
+  "discover": "/dɪˈskəvɝ/",
+  "discussion": "/dɪˈskəʃən/",
+  "discussions": "/dɪˈskəʃənz/",
+  "do": "/ˈdu/",
+  "does": "/ˈdəz/, /dɪz/",
+  "donation": "/doʊˈneɪʃən/",
+  "dramas": "/ˈdɹɑməz/",
+  "draw": "/ˈdɹɔ/",
+  "during": "/ˈdɝɪŋ/, /ˈdjʊɹɪŋ/, /ˈdʊɹɪŋ/",
+  "ear": "/ˈiɹ/, /ˈɪɹ/",
+  "easy": "/ˈizi/",
+  "edge": "/ˈɛdʒ/",
+  "education": "/ˌɛdʒəˈkeɪʃən/, /ˌɛdʒjuˈkeɪʃən/",
+  "educator": "/ˈɛdʒəˌkeɪtɝ/, /ˈɛdʒjuˌkeɪtɝ/",
+  "email": "/iˈmeɪɫ/",
+  "embodied": "/ɪmˈbɑdid/",
+  "embody": "/ɪmˈbɑdi/",
+  "emergency": "/ˈimɝdʒənsi/, /ɪˈmɝdʒənsi/",
+  "enable": "/ɛˈneɪbəɫ/, /ɪˈneɪbəɫ/",
+  "enclosed": "/ɛnˈkɫoʊzd/, /ɪnˈkɫoʊzd/",
+  "encourage": "/ɛnˈkɝɪdʒ/, /ɪnˈkɝədʒ/",
+  "encouraged": "/ɛnˈkɝɪdʒd/, /ɪnˈkɝədʒd/",
+  "enduring": "/ɛnˈdjʊɹɪŋ/, /ɪnˈdʊɹɪŋ/",
+  "english": "/ˈɪŋɡɫɪʃ/, /ˈɪŋɫɪʃ/",
+  "enhance": "/ɛnˈhæns/",
+  "enjoy": "/ˌɛnˈdʒɔɪ/, /ɪnˈdʒɔɪ/",
+  "entered": "/ˈɛnɝd/, /ˈɛntɝd/",
+  "error": "/ˈɛɹɝ/",
+  "errors": "/ˈɛɹɝz/",
+  "essential": "/ɛˈsɛnʃəɫ/, /iˈsɛnʃəɫ/",
+  "esteemed": "/ɪˈstimd/",
+  "even": "/ˈivɪn/",
+  "every": "/ˈɛvɝi/, /ˈɛvɹi/",
+  "everyone": "/ˈɛvɹiˌwən/",
+  "exam": "/ɪɡˈzæm/",
+  "exams": "/ɪɡˈzæmz/",
+  "excel": "/ɪkˈsɛɫ/",
+  "excuse": "/ɪkˈskjus/, /ɪkˈskjuz/",
+  "expect": "/ɪkˈspɛkt/",
+  "expected": "/ɪkˈspɛktəd/, /ɪkˈspɛktɪd/",
+  "experience": "/ɪkˈspɪɹiəns/",
+  "experiences": "/ɪkˈspɪɹiənsɪz/",
+  "expert": "/ˈɛkspɝt/",
+  "experts": "/ˈɛkspɝts/",
+  "express": "/ɪksˈpɹɛs/",
+  "extend": "/ɪkˈstɛnd/",
+  "extracurricular": "/ˌɛkstɹəkɝˈɪkjəɫɝ/",
+  "extremely": "/ɛkˈstɹimɫi/",
+  "family": "/ˈfæməɫi/, /ˈfæmɫi/",
+  "far": "/ˈfɑɹ/",
+  "fear": "/ˈfɪɹ/",
+  "feel": "/ˈfiɫ/",
+  "few": "/ˈfju/",
+  "finally": "/ˈfaɪnəɫi/",
+  "financial": "/ˌfaɪˈnænʃəɫ/, /fəˈnænʃəɫ/, /fɪˈnænʃəɫ/",
+  "find": "/ˈfaɪnd/",
+  "first": "/ˈfɝst/",
+  "firstly": "/ˈfɝstɫi/",
+  "follow": "/ˈfɑɫoʊ/",
+  "follows": "/ˈfɑɫoʊz/",
+  "for": "/ˈfɔɹ/, /fɝ/, /fɹɝ/",
+  "foreign": "/ˈfɑɹən/, /ˈfɔɹən/",
+  "forward": "/ˈfɔɹwɝd/",
+  "founder": "/ˈfaʊndɝ/",
+  "four": "/ˈfɔɹ/",
+  "free": "/ˈfɹi/",
+  "frequent": "/ˈfɹiˌkwɛnt/, /ˈfɹikwənt/",
+  "frequently": "/ˈfɹikwəntɫi/, /ˈfɹikwɛntɫi/",
+  "friend": "/ˈfɹɛnd/",
+  "friends": "/ˈfɹɛndz/, /ˈfɹɛnz/",
+  "from": "/ˈfɹəm/",
+  "gathering": "/ˈɡæðɝɪŋ/",
+  "gatherings": "/ˈɡæðɝɪŋz/",
+  "get": "/ˈɡɛt/, /ˈɡɪt/",
+  "girl": "/ˈɡɝɫ/",
+  "give": "/ˈɡɪv/",
+  "giving": "/ˈɡɪvɪŋ/",
+  "glad": "/ˈɡɫæd/",
+  "good": "/ˈɡʊd/, /ɡɪd/",
+  "graduate": "/ˈɡɹædʒəˌweɪt/, /ˈɡɹædʒəwət/, /ˈɡɹædʒuˌeɪt/, /ˈɡɹædʒuwət/",
+  "graduated": "/ˈɡɹædʒəˌweɪtɪd/, /ˈɡɹædʒuˌeɪtɪd/",
+  "graduates": "/ˈɡɹædʒəˌweɪts/, /ˈɡɹædʒəwəts/, /ˈɡɹædʒuˌeɪts/, /ˈɡɹædʒuwəts/",
+  "grant": "/ˈɡɹænt/",
+  "gratitude": "/ˈɡɹætəˌtud/",
+  "great": "/ˈɡɹeɪt/",
+  "group": "/ˈɡɹup/",
+  "had": "/ˈhæd/",
+  "happen": "/ˈhæpən/",
+  "has": "/ˈhæz/, /həz/",
+  "have": "/ˈhæv/",
+  "hearing": "/ˈhiɹɪŋ/",
+  "heartfelt": "/ˈhɑɹtˌfɛɫt/",
+  "hectic": "/ˈhɛktɪk/",
+  "help": "/ˈhɛɫp/",
+  "her": "/ˈhɝ/, /hɝ/",
+  "here": "/ˈhiɹ/",
+  "hero": "/ˈhiɹoʊ/, /ˈhɪɹoʊ/",
+  "high": "/ˈhaɪ/",
+  "highly": "/ˈhaɪɫi/",
+  "his": "/ˈhɪz/, /hɪz/",
+  "history": "/ˈhɪstɝi/, /ˈhɪstɹi/",
+  "homework": "/ˈhoʊmˌwɝk/",
+  "hope": "/ˈhoʊp/",
+  "hoping": "/ˈhoʊpɪŋ/",
+  "however": "/ˌhaʊˈɛvɝ/",
+  "i": "/ˈaɪ/",
+  "i'm": "/ˈaɪm/, /əm/",
+  "if": "/ˈɪf/, /ɪf/",
+  "image": "/ˈɪmədʒ/, /ˈɪmɪdʒ/",
+  "images": "/ˈɪmədʒəz/, /ˈɪmɪdʒɪz/",
+  "improve": "/ˌɪmˈpɹuv/",
+  "improved": "/ˌɪmˈpɹuvd/",
+  "improvement": "/ˌɪmˈpɹuvmənt/",
+  "improvements": "/ˌɪmˈpɹuvmənts/",
+  "in": "/ˈɪn/, /ɪn/",
+  "including": "/ˌɪnˈkɫudɪŋ/",
+  "inconvenience": "/ˌɪnkənˈvinjəns/",
+  "infection": "/ˌɪnˈfɛkʃən/",
+  "influence": "/ˈɪnfɫuəns/",
+  "influenced": "/ˈɪnfɫuənst/",
+  "inform": "/ˌɪnˈfɔɹm/",
+  "inspire": "/ˌɪnˈspaɪɹ/",
+  "inspired": "/ˌɪnˈspaɪɝd/",
+  "institute": "/ˈɪnstəˌtut/",
+  "interest": "/ˈɪntɝəst/, /ˈɪntɝɪst/, /ˈɪntɹəst/, /ˈɪntɹɪst/",
+  "interested": "/ˈɪntɝəstəd/, /ˈɪntɝɪstɪd/, /ˈɪntɹəstɪd/, /ˈɪntɹɪstɪd/",
+  "interpersonal": "/ˌɪntɝˈpɝsənəɫ/",
+  "interview": "/ˈɪntɝvˌju/",
+  "into": "/ˈɪntu/, /ɪnˈtu/, /ɪntə/",
+  "invite": "/ˌɪnˈvaɪt/",
+  "involve": "/ˌɪnˈvɑɫv/",
+  "involved": "/ˌɪnˈvɑɫvd/",
+  "is": "/ˈɪz/, /ɪz/",
+  "issue": "/ˈɪʃu/",
+  "issues": "/ˈɪʃuz/",
+  "it": "/ˈɪt/, /ɪt/",
+  "january": "/ˈdʒænjuˌɛɹi/",
+  "job": "/ˈdʒɑb/, /ˈdʒoʊb/",
+  "john": "/ˈdʒɑn/",
+  "join": "/ˈdʒɔɪn/",
+  "keen": "/ˈkin/",
+  "kid": "/ˈkɪd/",
+  "kids": "/ˈkɪdz/",
+  "kingdom": "/ˈkɪŋdəm/",
+  "kingdoms": "/ˈkɪŋdəmz/",
+  "knocked": "/ˈnɑkt/",
+  "know": "/ˈnoʊ/",
+  "language": "/ˈɫæŋɡwədʒ/, /ˈɫæŋɡwɪdʒ/",
+  "last": "/ˈɫæs/, /ˈɫæst/",
+  "lastly": "/ˈɫæstɫi/",
+  "later": "/ˈɫeɪtɝ/",
+  "leading": "/ˈɫidɪŋ/",
+  "learn": "/ˈɫɝn/",
+  "lecture": "/ˈɫɛktʃɝ/",
+  "led": "/ˈɫɛd/",
+  "letter": "/ˈɫɛtɝ/",
+  "level": "/ˈɫɛvəɫ/",
+  "li": "/ˈɫi/",
+  "liang": "/ˈɫjæŋ/, /ɫiˈæŋ/",
+  "life": "/ˈɫaɪf/",
+  "like": "/ˈɫaɪk/",
+  "liu": "/ˈɫju/",
+  "local": "/ˈɫoʊkəɫ/",
+  "looking": "/ˈɫʊkɪŋ/",
+  "lot": "/ˈɫɑt/, /ˈɫɔt/",
+  "love": "/ˈɫəv/",
+  "m": "/ˈɛm/",
+  "madam": "/ˈmædəm/",
+  "mainly": "/ˈmeɪnɫi/",
+  "make": "/ˈmeɪk/",
+  "management": "/ˈmænədʒmənt/, /ˈmænɪdʒmənt/",
+  "matter": "/ˈmætɝ/",
+  "may": "/ˈmeɪ/",
+  "me": "/ˈmi/",
+  "meeting": "/ˈmitɪŋ/",
+  "meets": "/ˈmits/",
+  "member": "/ˈmɛmbɝ/",
+  "members": "/ˈmɛmbɝz/",
+  "membership": "/ˈmɛmbɝˌʃɪp/",
+  "might": "/ˈmaɪt/",
+  "military": "/ˈmɪɫəˌtɛɹi/, /ˈmɪɫɪˌtɛɹi/",
+  "ming": "/ˈmɪŋ/",
+  "minutes": "/ˈmɪnəts/",
+  "monday": "/ˈmənˌdeɪ/, /ˈməndi/",
+  "more": "/ˈmɔɹ/",
+  "most": "/ˈmoʊs/, /ˈmoʊst/",
+  "mounting": "/ˈmaʊntɪŋ/",
+  "moved": "/ˈmuvd/",
+  "movies": "/ˈmuviz/",
+  "mr": "/ˈmɪstɝ/",
+  "much": "/ˈmətʃ/",
+  "multiple": "/ˈməɫtəpəɫ/",
+  "musical": "/ˈmjuzɪkəɫ/",
+  "my": "/ˈmaɪ/",
+  "native": "/ˈneɪtɪv/",
+  "need": "/ˈnid/",
+  "nicer": "/ˈnaɪsɝ/",
+  "noble": "/ˈnoʊbəɫ/",
+  "not": "/ˈnɑt/",
+  "note": "/ˈnoʊt/",
+  "notice": "/ˈnoʊtəs/, /ˈnoʊtɪs/",
+  "novel": "/ˈnɑvəɫ/",
+  "novels": "/ˈnɑvəɫz/",
+  "now": "/ˈnaʊ/",
+  "nowadays": "/ˈnaʊəˌdeɪz/",
+  "numbers": "/ˈnəmbɝz/",
+  "of": "/ˈəv/",
+  "off": "/ˈɔf/",
+  "offer": "/ˈɔfɝ/",
+  "offering": "/ˈɔfɝɪŋ/, /ˈɔfɹɪŋ/",
+  "office": "/ˈɔfɪs/",
+  "old": "/ˈoʊɫd/",
+  "omission": "/oʊˈmɪʃən/",
+  "omissions": "/oʊˈmɪʃənz/",
+  "on": "/ˈɑn/, /ˈɔn/",
+  "one": "/ˈwən/",
+  "online": "/ˈɔnˌɫaɪn/",
+  "only": "/ˈoʊnɫi/",
+  "opened": "/ˈoʊpənd/",
+  "opportunities": "/ˌɑpɝˈtunətiz/",
+  "opportunity": "/ˌɑpɝˈtunəti/",
+  "or": "/ˈɔɹ/, /ɝ/",
+  "organized": "/ˈɔɹɡəˌnaɪzd/",
+  "other": "/ˈəðɝ/",
+  "our": "/ˈaʊɝ/, /ˈaʊɹ/, /ˈɑɹ/",
+  "out": "/ˈaʊt/",
+  "outcome": "/ˈaʊtˌkəm/",
+  "outstanding": "/ˌaʊtˈstændɪŋ/",
+  "over": "/ˈoʊvɝ/",
+  "overseas": "/ˈoʊvɝˈsiz/",
+  "p": "/ˈpi/",
+  "part": "/ˈpɑɹt/",
+  "participate": "/pɑɹˈtɪsəˌpeɪt/",
+  "participation": "/pɑɹˌtɪsəˈpeɪʃən/",
+  "parts": "/ˈpɑɹts/",
+  "passenger": "/ˈpæsəndʒɝ/",
+  "pay": "/ˈpeɪ/",
+  "peer": "/ˈpɪɹ/",
+  "peers": "/ˈpɪɹz/",
+  "peking": "/ˈpiˈkɪŋ/",
+  "people": "/ˈpipəɫ/",
+  "perfect": "/ˈpɝˌfɪkt/, /pɝˈfɛkt/",
+  "perhaps": "/pɝˈhæps/",
+  "period": "/ˈpɪɹiəd/",
+  "personality": "/ˌpɝsəˈnæɫɪti/",
+  "place": "/ˈpɫeɪs/",
+  "plan": "/ˈpɫæn/",
+  "planning": "/ˈpɫænɪŋ/",
+  "platform": "/ˈpɫætˌfɔɹm/",
+  "play": "/ˈpɫeɪ/",
+  "please": "/ˈpɫiz/",
+  "pleasure": "/ˈpɫɛʒɝ/",
+  "political": "/pəˈɫɪtəkəɫ/, /pəˈɫɪtɪkəɫ/",
+  "politician": "/ˌpɑɫəˈtɪʃən/",
+  "politicians": "/ˌpɑɫəˈtɪʃənz/",
+  "poor": "/ˈpuɹ/",
+  "portray": "/pɔɹˈtɹeɪ/",
+  "portrays": "/pɔɹˈtɹeɪz/",
+  "position": "/pəˈzɪʃən/",
+  "possible": "/ˈpɑsəbəɫ/",
+  "postpone": "/poʊˈspoʊn/, /poʊstˈpoʊn/",
+  "practical": "/ˈpɹæktəkəɫ/, /ˈpɹæktɪkəɫ/",
+  "practice": "/ˈpɹæktəs/, /ˈpɹæktɪs/",
+  "preach": "/ˈpɹitʃ/",
+  "prepared": "/pɹiˈpɛɹd/",
+  "present": "/ˈpɹɛzənt/, /pɝˈzɛnt/, /pɹiˈzɛnt/",
+  "preside": "/pɹiˈzaɪd/, /pɹɪˈzaɪd/",
+  "presided": "/pɹiˈzaɪdɪd/, /pɹɪˈzaɪdɪd/",
+  "pressure": "/ˈpɹɛʃɝ/",
+  "prestigious": "/pɝˈstidʒəs/, /pɹɛˈstɪdʒəs/",
+  "previous": "/ˈpɹiviəs/",
+  "principle": "/ˈpɹɪnsəpəɫ/",
+  "professor": "/pɹəˈfɛsɝ/",
+  "proficiency": "/pɹəˈfɪʃənsi/",
+  "project": "/ˈpɹɑdʒɛkt/, /pɹəˈdʒɛkt/",
+  "promise": "/ˈpɹɑməs/",
+  "provide": "/pɹəˈvaɪd/",
+  "provided": "/pɹəˈvaɪdɪd/",
+  "province": "/ˈpɹɑvəns/, /ˈpɹɑvɪns/",
+  "punctuality": "/ˌpəŋktʃuˈæɫɪti/",
+  "qualifications": "/ˌkwɑɫəfəˈkeɪʃənz/",
+  "question": "/ˈkwɛstʃən/, /ˈkwɛʃən/",
+  "questions": "/ˈkwɛstʃənz/",
+  "quick": "/ˈkwɪk/",
+  "quite": "/ˈkwaɪt/",
+  "r": "/ˈɑɹ/",
+  "railway": "/ˈɹeɪɫˌweɪ/",
+  "range": "/ˈɹeɪndʒ/",
+  "reason": "/ˈɹizən/",
+  "reasons": "/ˈɹizənz/",
+  "recently": "/ˈɹisənɫi/, /ˈɹisəntɫi/",
+  "recommend": "/ˌɹɛkəˈmɛnd/",
+  "recorded": "/ɹəˈkɔɹdɪd/, /ɹɪˈkɔɹdɪd/",
+  "recreation": "/ˌɹɛkɹiˈeɪʃən/",
+  "refer": "/ɹəˈfɝ/, /ɹɪˈfɝ/",
+  "referring": "/ɹɪˈfɝɪŋ/",
+  "regards": "/ɹɪˈɡɑɹdz/",
+  "regular": "/ˈɹeɪɡjəɫɝ/, /ˈɹɛɡjəɫɝ/",
+  "relation": "/ɹiˈɫeɪʃən/",
+  "relations": "/ɹiˈɫeɪʃənz/",
+  "remain": "/ɹiˈmeɪn/, /ɹɪˈmeɪn/",
+  "remains": "/ɹiˈmeɪnz/, /ɹɪˈmeɪnz/",
+  "remit": "/ɹiˈmɪt/",
+  "remote": "/ɹiˈmoʊt/, /ɹɪˈmoʊt/",
+  "reply": "/ɹiˈpɫaɪ/, /ɹɪˈpɫaɪ/",
+  "require": "/ˌɹiˈkwaɪɝ/, /ɹiˈkwaɪɹ/, /ɹɪˈkwaɪɝ/",
+  "response": "/ɹiˈspɑns/, /ɹɪˈspɑns/",
+  "responsibility": "/ɹiˌspɑnsəˈbɪɫəti/",
+  "resume": "/ˈɹɛzəˌmeɪ/, /ɹiˈzum/, /ɹɪˈzum/",
+  "reveal": "/ɹiˈviɫ/, /ɹɪˈviɫ/",
+  "reveals": "/ɹiˈviɫz/, /ɹɪˈviɫz/",
+  "review": "/ˌɹivˈju/",
+  "revised": "/ɹiˈvaɪzd/, /ɹɪˈvaɪzd/",
+  "romance": "/ˈɹoʊmæns/, /ɹoʊˈmæns/",
+  "room": "/ˈɹum/",
+  "sage": "/ˈseɪdʒ/",
+  "same": "/ˈseɪm/",
+  "satisfactory": "/ˌsætəsˈfæktɹi/, /ˌsætɪsˈfæktɝi/",
+  "say": "/ˈseɪ/",
+  "school": "/ˈskuɫ/",
+  "second": "/ˈsɛkənd/",
+  "secondly": "/ˈsɛkəndɫi/",
+  "see": "/ˈsi/",
+  "seek": "/ˈsik/",
+  "senior": "/ˈsinjɝ/",
+  "sense": "/ˈsɛns/",
+  "serious": "/ˈsɪɹiəs/",
+  "serve": "/ˈsɝv/",
+  "serves": "/ˈsɝvz/",
+  "service": "/ˈsɝvəs/, /ˈsɝvɪs/",
+  "session": "/ˈsɛʃən/",
+  "several": "/ˈsɛvɝəɫ/, /ˈsɛvɹəɫ/",
+  "shakespeare": "/ˈʃeɪkˌspiɹ/",
+  "share": "/ˈʃɛɹ/",
+  "she": "/ˈʃi/",
+  "short": "/ˈʃɔɹt/",
+  "should": "/ˈʃʊd/",
+  "sichuan": "/ˌsɪtʃˈwɑn/",
+  "since": "/ˈsɪns/",
+  "sincerely": "/sɪnˈsɪɹɫi/",
+  "sir": "/ˈsɝ/",
+  "situation": "/ˌsɪtʃuˈeɪʃən/",
+  "skills": "/ˈskɪɫz/",
+  "so": "/ˈsoʊ/",
+  "social": "/ˈsoʊʃəɫ/",
+  "society": "/səˈsaɪəti/",
+  "some": "/ˈsəm/",
+  "soon": "/ˈsun/",
+  "sooner": "/ˈsunɝ/",
+  "sorry": "/ˈsɑɹi/",
+  "speech": "/ˈspitʃ/",
+  "speeches": "/ˈspitʃəz/, /ˈspitʃɪz/",
+  "spend": "/ˈspɛnd/",
+  "spite": "/ˈspaɪt/",
+  "sports": "/ˈspɔɹts/",
+  "spring": "/ˈspɹɪŋ/, /spɝˈɪŋ/",
+  "staff": "/ˈstæf/",
+  "staging": "/ˈsteɪdʒɪŋ/",
+  "still": "/ˈstɪɫ/",
+  "story": "/ˈstɔɹi/",
+  "strengthen": "/ˈstɹɛŋθən/",
+  "strengthening": "/ˈstɹɛŋθənɪŋ/",
+  "struggle": "/ˈstɹəɡəɫ/",
+  "struggles": "/ˈstɹəɡəɫz/",
+  "student": "/ˈstudənt/",
+  "students": "/ˈstudənts/",
+  "studies": "/ˈstədiz/",
+  "study": "/ˈstədi/",
+  "submit": "/səbˈmɪt/",
+  "submitted": "/səbˈmɪtɪd/",
+  "successfully": "/səkˈsɛsfəɫi/",
+  "such": "/ˈsətʃ/",
+  "suggestion": "/səˈdʒɛstʃən/",
+  "suggestions": "/səˈdʒɛstʃənz/",
+  "suitable": "/ˈsutəbəɫ/",
+  "suited": "/ˈsutɪd/",
+  "sum": "/ˈsəm/",
+  "summary": "/ˈsəmɝi/",
+  "sunday": "/ˈsənˌdeɪ/, /ˈsənˌdi/",
+  "sure": "/ˈʃʊɹ/",
+  "surgery": "/ˈsɝdʒɝi/",
+  "system": "/ˈsɪstəm/",
+  "take": "/ˈteɪk/",
+  "taking": "/ˈteɪkɪŋ/",
+  "talk": "/ˈtɔk/",
+  "taxi": "/ˈtæksi/",
+  "teach": "/ˈtitʃ/",
+  "teaching": "/ˈtitʃɪŋ/",
+  "that": "/ˈðæt/, /ðət/",
+  "the": "/ˈðə/, /ðə/, /ði/",
+  "their": "/ˈðɛɹ/",
+  "there": "/ˈðɛɹ/",
+  "therefore": "/ˈðɛɹˌfɔɹ/",
+  "these": "/ˈðiz/",
+  "they": "/ˈðeɪ/",
+  "thinker": "/ˈθɪŋkɝ/",
+  "thinkers": "/ˈθɪŋkɝz/",
+  "this": "/ˈðɪs/, /ðɪs/",
+  "those": "/ˈðoʊz/",
+  "thought": "/ˈθɔt/",
+  "three": "/ˈθɹi/",
+  "thus": "/ˈðəs/",
+  "tightly": "/ˈtaɪtɫi/",
+  "time": "/ˈtaɪm/",
+  "timely": "/ˈtaɪmɫi/",
+  "to": "/ˈtu/, /tə/, /tɪ/",
+  "today": "/təˈdeɪ/, /tuˈdeɪ/",
+  "train": "/ˈtɹeɪn/",
+  "trouble": "/ˈtɹəbəɫ/",
+  "tuition": "/tjuˈɪʃən/",
+  "turbulent": "/ˈtɝbjəɫənt/",
+  "tutor": "/ˈtutɝ/",
+  "unfortunate": "/ənˈfɔɹtʃənət/, /ənˈfɔɹtʃunət/",
+  "unfortunately": "/ənˈfɔɹtʃənətɫi/, /ənˈfɔɹtʃunətɫi/",
+  "union": "/ˈjunjən/",
+  "university": "/ˌjunəˈvɝsəti/",
+  "until": "/ənˈtɪɫ/",
+  "us": "/ˈəs/, /ˌjuˈɛs/",
+  "usually": "/ˈjuʒəɫi/, /ˈjuʒəwəɫi/",
+  "variety": "/vɝˈaɪəti/",
+  "various": "/ˈvɛɹiəs/",
+  "very": "/ˈvɛɹi/",
+  "was": "/ˈwɑz/, /wəz/",
+  "watching": "/ˈwɑtʃɪŋ/",
+  "we": "/ˈwi/",
+  "week": "/ˈwik/",
+  "wei": "/ˈweɪ/",
+  "welcome": "/ˈwɛɫkəm/",
+  "well": "/ˈwɛɫ/",
+  "were": "/ˈwɝ/",
+  "what": "/ˈhwət/, /ˈwət/",
+  "when": "/ˈhwɛn/, /ˈhwɪn/, /ˈwɛn/, /ˈwɪn/",
+  "which": "/ˈhwɪtʃ/, /ˈwɪtʃ/",
+  "who": "/ˈhu/",
+  "whole": "/ˈhoʊɫ/",
+  "whose": "/ˈhuz/",
+  "will": "/ˈwɪɫ/, /wəɫ/",
+  "with": "/ˈwɪð/, /ˈwɪθ/, /wɪð/, /wɪθ/",
+  "words": "/ˈwɝdz/",
+  "work": "/ˈwɝk/",
+  "world": "/ˈwɝɫd/",
+  "worse": "/ˈwɝs/",
+  "worthwhile": "/ˈwɝθˈwaɪɫ/",
+  "would": "/ˈwʊd/",
+  "writers": "/ˈɹaɪtɝz/",
+  "writing": "/ˈɹaɪtɪŋ/",
+  "written": "/ˈɹɪtən/",
+  "years": "/ˈjɪɹz/, /jɝz/",
+  "you": "/ˈju/",
+  "your": "/ˈjɔɹ/, /ˈjʊɹ/",
+  "yours": "/ˈjɔɹz/, /ˈjʊɹz/, /jɝz/",
+  "yu": "/ˈju/",
+  "zhang": "/ˈʒæŋ/, /ˈʒɑŋ/"
+};
+
+const wordNotes = Object.fromEntries(`
+behalf|bɪˈhæf|名词|on behalf of the Students’ Union（代表学生会）
+prestigious|preˈstɪdʒəs|形容词|a prestigious university（一所知名大学）
+heartfelt|ˈhɑrtˌfɛlt|形容词|extend a heartfelt welcome（表示由衷欢迎）
+abundant|əˈbʌndənt|形容词|abundant homework（大量作业）
+hectic|ˈhɛktɪk|形容词|a hectic life（忙碌的生活）
+extracurricular|ˌɛkstrəkəˈrɪkjələr|形容词|extracurricular activities（课外活动）
+ample|ˈæmpəl|形容词|provide ample opportunities（提供充足机会）
+worthwhile|ˌwɜrθˈwaɪl|形容词|make the time worthwhile（让这段时间过得有价值）
+enhance|ɪnˈhæns|动词|enhance your life（丰富生活）
+depict|dɪˈpɪkt|动词|depict political struggles（描写政治斗争）
+turbulent|ˈtɜrbjələnt|形容词|a turbulent society（动荡的社会）
+portray|pɔrˈtreɪ|动词|portray a character（塑造人物）
+excel|ɪkˈsɛl|动词|excel in acting（擅长表演）
+cordially|ˈkɔrdʒəli|副词|cordially invite you to…（诚挚邀请你……）
+enduring|ɪnˈdʊrɪŋ|形容词|an enduring classic（不朽的经典）
+punctuality|ˌpʌŋktʃuˈæləti|名词|punctuality is essential（准时至关重要）
+satisfactory|ˌsætɪsˈfæktəri|形容词|a satisfactory reply（令人满意的回复）
+inconvenience|ˌɪnkənˈviniəns|名词|cause inconvenience（造成不便）
+embody|ɪmˈbɑdi|动词|embody a principle（体现一项原则）
+allocate|ˈæləˌkeɪt|动词|allocate time for discussion（为讨论分配时间）
+gratitude|ˈɡrætəˌtud|名词|express my gratitude（表达我的感激）
+assistance|əˈsɪstəns|名词|offer timely assistance（及时提供帮助）
+consequence|ˈkɑnsəˌkwɛns|名词|serious consequences（严重后果）
+emergency|ɪˈmɜrdʒənsi|名词|respond to an emergency（应对紧急情况）
+postpone|poʊstˈpoʊn|动词|postpone the interview（推迟面试）
+apologize|əˈpɑləˌdʒaɪz|动词|apologize for any inconvenience（为造成的不便道歉）
+appreciate|əˈpriʃiˌeɪt|动词|I would appreciate it if…（如果……我将不胜感激）
+proficiency|prəˈfɪʃənsi|名词|proficiency in English（英语熟练程度）
+beneficial|ˌbɛnəˈfɪʃəl|形容词|highly beneficial（大有裨益）
+tuition|tuˈɪʃən|名词|pay for her tuition（支付她的学费）
+remit|rɪˈmɪt|动词|remit a donation（汇出捐款）
+omission|oʊˈmɪʃən|名词|errors or omissions（错误或遗漏）
+`.trim().split('\n').map(line => {
+  const [word, ipa, pos, example] = line.split('|');
+  return [word, {ipa, pos, example}];
+}));
+
+const writingTips = {
+  behalf: '代表集体发言时，用 on behalf of + 组织名。',
+  heartfelt: '欢迎信可用 extend a heartfelt welcome to + 对象。',
+  ample: '用 opportunities to do 表达做某事的机会。',
+  cordially: '正式邀请可用 I cordially invite you to + 动词原形。',
+  punctuality: '投诉信中先陈述服务标准，再说明实际问题。',
+  allocate: '介绍安排时，可用 allocate + 时间 + for + 活动。',
+  gratitude: '致谢时用 express my gratitude for + 具体帮助。',
+  apologize: '道歉信可用 apologize for + 名词或动名词。',
+  appreciate: '礼貌请求常用 I would appreciate it if you could…',
+  proficiency: '描述能力时，用 proficiency in + 语言或技能。',
+  tuition: 'tuition 通常作不可数名词，可用 pay for someone’s tuition。',
+  omission: '请别人校对时，可用 errors or omissions 涵盖错误和遗漏。'
+};
+
+function lookupWord(word) {
+  const key = word.toLowerCase().replaceAll('’', "'");
+  const irregular = {felt:'feel', held:'hold', found:'find', spent:'spend', made:'make', written:'write', took:'take'};
+  const forms = [key, irregular[key]];
+  if (key.endsWith("'s")) forms.push(key.slice(0, -2));
+  if (key.endsWith('ies')) forms.push(key.slice(0, -3) + 'y');
+  if (key.endsWith('es')) forms.push(key.slice(0, -2), key.slice(0, -1));
+  else if (key.endsWith('s')) forms.push(key.slice(0, -1));
+  for (const suffix of ['ed', 'ing']) {
+    if (!key.endsWith(suffix)) continue;
+    const stem = key.slice(0, -suffix.length);
+    forms.push(stem, stem + 'e');
+    if (stem.endsWith('i')) forms.push(stem.slice(0, -1) + 'y');
+    if (/(.)\1$/.test(stem)) forms.push(stem.slice(0, -1));
+  }
+  return forms.find(form => Object.hasOwn(LOCAL_ZH, form) || Object.hasOwn(wordNotes, form)) || key;
+}
+
+function openDict(word, ctx) {
+  const key = lookupWord(word);
+  const note = Object.hasOwn(wordNotes, key) ? wordNotes[key] : null;
+  const cached = readLocal('essay_word_cache', {})[word.toLowerCase()];
+  const meaning = Object.hasOwn(LOCAL_ZH, key) ? LOCAL_ZH[key] : '词表暂无释义，可参考所在句的翻译。';
+  $('#dictword').textContent = word;
+  const normalized = word.toLowerCase().replaceAll('’', "'");
+  const ipa = offlineIpa[normalized] || cached?.phon || (normalized === key && note ? '/' + note.ipa + '/' : '');
+  $('#phon').textContent = [ipa, note?.pos].filter(Boolean).join(' · ');
+  $('#meaning').textContent = meaning;
+  $('#word-note').textContent = note ? (key !== word.toLowerCase() ? '原形：' + key + ' · ' : '') + note.example + (Object.hasOwn(writingTips, key) ? '。' + writingTips[key] : '') : '';
+  $('#word-note').hidden = !note;
+  $('#context').textContent = '所在句译文：' + ctx;
+  $('#dict').classList.add('show');
+  $('#speakWord').onclick = () => speakText(word, 'https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(word));
+  $('#addVocab').textContent = vocab().some(entry => entry.key === key) ? '已加入生词本' : '加入生词本';
+  $('#addVocab').onclick = () => addVocab(key, word, ctx, meaning);
+}
+
+function closeDict() {
+  $('#dict').classList.remove('show');
+}
+
+let audioManifest = {};
+let activeAudio;
+let speechRequest = 0;
+let audioTimer;
+
+function stopSpeak() {
+  speechRequest++;
+  clearTimeout(audioTimer);
+  if (activeAudio) {
+    activeAudio.pause();
+    activeAudio.removeAttribute('src');
+    activeAudio.load();
+    activeAudio = null;
+  }
+  window.speechSynthesis?.cancel();
+  const status = $('#audio-status');
+  if (status) status.textContent = '';
+}
+
+function speakSystem(text, request) {
+  const synth = window.speechSynthesis;
+  if (!synth) {
+    if ($('#audio-status')) $('#audio-status').textContent = '当前浏览器无法朗读，可尝试用系统浏览器打开。';
+    return;
+  }
+  const status = $('#audio-status');
+  if (status) status.textContent = '正在使用浏览器语音朗读…';
+  const american = synth.getVoices().filter(voice => voice.lang.toLowerCase() === 'en-us');
+  const voice = american.find(voice => /natural|neural|samantha/i.test(voice.name)) || american[0];
+  const parts = text.length > 200 ? text.match(/[^.!?]+[.!?]+[”"']?(?=\s|$)|[^.!?]+$/g) : null;
+  const segments = parts?.join('').replace(/\s/g, '') === text.replace(/\s/g, '') ? parts : [text];
+  let next = 0;
+  function playNext() {
+    if (request !== speechRequest) return;
+    if (next >= segments.length) {
+      if ($('#audio-status')) $('#audio-status').textContent = '';
+      return;
+    }
+    const utterance = new SpeechSynthesisUtterance(segments[next++].trim());
+    utterance.lang = 'en-US';
+    utterance.rate = S.rate;
+    if (voice) utterance.voice = voice;
+    utterance.onend = playNext;
+    utterance.onerror = () => {
+      if (request === speechRequest && $('#audio-status')) $('#audio-status').textContent = '浏览器语音播放失败，请检查设备的英语语音设置。';
+    };
+    synth.speak(utterance);
+  }
+  playNext();
+}
+
+function speakText(text, url) {
+  stopSpeak();
+  const request = speechRequest;
+  if (!url) return speakSystem(text, request);
+  const audio = new Audio();
+  activeAudio = audio;
+  audio.playbackRate = S.rate;
+  const fallback = () => {
+    if (request !== speechRequest || activeAudio !== audio) return;
+    stopSpeak();
+    speakSystem(text, speechRequest);
+  };
+  audio.addEventListener('error', fallback, {once: true});
+  audio.addEventListener('playing', () => {if (activeAudio === audio) clearTimeout(audioTimer);}, {once: true});
+  audio.addEventListener('ended', () => {
+    if (activeAudio === audio) activeAudio = null;
+  }, {once: true});
+  audioTimer = setTimeout(fallback, 4000);
+  audio.src = url;
+  audio.play().catch(fallback);
+}
+
+function speakTrack(text, suffix) {
+  const key = 'e' + (S.current + 1) + '_' + suffix;
+  const track = audioManifest[key];
+  const valid = track?.text === text && /^e\d+_(?:s\d+|full)\.[a-f0-9]{12}\.mp3$/.test(track.file);
+  speakText(text, valid ? './audio/' + track.file : null);
+}
+
+function toggleZh(){S.hideZh=!S.hideZh;render()} function vocab(){return readLocal('essay_vocab',[])} function addVocab(key,word,ctx,meaning){let v=vocab();if(!v.some(x=>x.key===key))v.unshift({key,word,ctx,meaning});writeLocal('essay_vocab',v);$('#addVocab').textContent='已加入生词本'}
+function renderVocab(){let v=vocab();return `<div class="vocabList">${v.length?v.map((x,i)=>`<div class="vrow"><b>${esc(x.word)}</b><span>${esc(x.meaning)}</span><button class="btn" onclick="removeVocab(${i})">移除</button></div>`).join(''):'还没有生词。背诵时点击单词即可添加。'}</div>`}function removeVocab(i){let v=vocab();v.splice(i,1);writeLocal('essay_vocab',v);render()}
+function norm(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().split(/\s+/)}function checkWriting(){let a=norm(fullText(S.essays[S.current])),b=norm($('#writing').value),hit=b.filter((x,i)=>x===a[i]).length,score=Math.round(hit/Math.max(a.length,1)*100);$('#score').style.display='block';$('#score').innerHTML=`顺序匹配度：<b>${score}%</b>。建议对照参考答案检查拼写和漏句。`}function toggleAnswer(){$('#answer').classList.toggle('show')}function clearWriting(){$('#writing').value='';writeLocal(draftKey(),'');$('#score').style.display='none'}
+function done(){return readLocal('essay_done',[])}function markDone(){let d=done(),i=S.current;if(d.includes(i))d=d.filter(x=>x!==i);else d.push(i);writeLocal('essay_done',d);updateProgress()}function updateProgress(){let p=Math.round(done().length/Math.max(S.essays.length,1)*100);$('#pbar').style.width=p+'%';const doneButton=$('#done-toggle');if(doneButton){const mastered=done().includes(S.current);doneButton.textContent=mastered?'已掌握 · 取消':'标记已掌握';doneButton.setAttribute('aria-pressed',String(mastered))}$('#ptxt').textContent=`学习进度 ${p}%`}
+fetch('audio/manifest.json').then(response => response.ok ? response.json() : {}).then(manifest => {audioManifest = manifest || {};}).catch(() => {});
+$('#search').oninput=e=>renderList(e.target.value);fetch('source.txt').then(r=>{if(!r.ok)throw new Error('source.txt');return r.text()}).then(t=>{S.essays=parse(t);renderList();render()}).catch(()=>$('#main').innerHTML='<div class="empty">作文内容加载失败，请刷新页面。</div>');
 </script></body></html>
