@@ -824,7 +824,10 @@ function openDict(word, ctx) {
   $('#word-note').hidden = !note;
   $('#context').textContent = '所在句译文：' + ctx;
   $('#dict').classList.add('show');
-  $('#speakWord').onclick = () => speakText(word, 'https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(word));
+  $('#speakWord').onclick = () => {
+    const pronunciation = preferredUSVoice() ? null : 'https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(word);
+    speakText(word, pronunciation);
+  };
   $('#addVocab').textContent = vocab().some(entry => entry.key === key) ? '已加入生词本' : '加入生词本';
   $('#addVocab').onclick = () => addVocab(key, word, ctx, meaning);
 }
@@ -852,6 +855,17 @@ function stopSpeak() {
   if (status) status.textContent = '';
 }
 
+function americanVoices() {
+  return window.speechSynthesis?.getVoices().filter(voice => voice.lang.toLowerCase() === 'en-us') || [];
+}
+
+function preferredUSVoice(voices = americanVoices()) {
+  const female = voices.filter(voice => /\b(ava|jenny|aria|samantha|zira|emma|michelle|joanna|allison|susan|karen|salli|kendra|kimberly|female)\b/i.test(voice.name));
+  return female.find(voice => /\bava\b/i.test(voice.name)) ||
+    female.find(voice => /natural|neural|premium|enhanced/i.test(voice.name)) ||
+    female[0];
+}
+
 function speakSystem(text, request) {
   const synth = window.speechSynthesis;
   if (!synth) {
@@ -860,8 +874,8 @@ function speakSystem(text, request) {
   }
   const status = $('#audio-status');
   if (status) status.textContent = '正在使用浏览器语音朗读…';
-  const american = synth.getVoices().filter(voice => voice.lang.toLowerCase() === 'en-us');
-  const voice = american.find(voice => /natural|neural|samantha/i.test(voice.name)) || american[0];
+  const american = americanVoices();
+  const voice = preferredUSVoice(american) || american[0];
   const parts = text.length > 200 ? text.match(/[^.!?]+[.!?]+[”"']?(?=\s|$)|[^.!?]+$/g) : null;
   const segments = parts?.join('').replace(/\s/g, '') === text.replace(/\s/g, '') ? parts : [text];
   let next = 0;
@@ -917,6 +931,6 @@ function toggleZh(){S.hideZh=!S.hideZh;render()} function vocab(){return readLoc
 function renderVocab(){let v=vocab();return `<div class="vocabList">${v.length?v.map((x,i)=>`<div class="vrow"><b>${esc(x.word)}</b><span>${esc(x.meaning)}</span><button class="btn" onclick="removeVocab(${i})">移除</button></div>`).join(''):'还没有生词。背诵时点击单词即可添加。'}</div>`}function removeVocab(i){let v=vocab();v.splice(i,1);writeLocal('essay_vocab',v);render()}
 function norm(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().split(/\s+/)}function checkWriting(){let a=norm(fullText(S.essays[S.current])),b=norm($('#writing').value),hit=b.filter((x,i)=>x===a[i]).length,score=Math.round(hit/Math.max(a.length,1)*100);$('#score').style.display='block';$('#score').innerHTML=`顺序匹配度：<b>${score}%</b>。建议对照参考答案检查拼写和漏句。`}function toggleAnswer(){$('#answer').classList.toggle('show')}function clearWriting(){$('#writing').value='';writeLocal(draftKey(),'');$('#score').style.display='none'}
 function done(){return readLocal('essay_done',[])}function markDone(){let d=done(),i=S.current;if(d.includes(i))d=d.filter(x=>x!==i);else d.push(i);writeLocal('essay_done',d);updateProgress()}function updateProgress(){let p=Math.round(done().length/Math.max(S.essays.length,1)*100);$('#pbar').style.width=p+'%';const doneButton=$('#done-toggle');if(doneButton){const mastered=done().includes(S.current);doneButton.textContent=mastered?'已掌握 · 取消':'标记已掌握';doneButton.setAttribute('aria-pressed',String(mastered))}$('#ptxt').textContent=`学习进度 ${p}%`}
-fetch('audio/manifest.json').then(response => response.ok ? response.json() : {}).then(manifest => {audioManifest = manifest || {};}).catch(() => {});
+fetch('audio/manifest.json?voice=ava').then(response => response.ok ? response.json() : {}).then(manifest => {audioManifest = manifest || {};}).catch(() => {});
 $('#search').oninput=e=>renderList(e.target.value);fetch('source.txt').then(r=>{if(!r.ok)throw new Error('source.txt');return r.text()}).then(t=>{S.essays=parse(t);renderList();render()}).catch(()=>$('#main').innerHTML='<div class="empty">作文内容加载失败，请刷新页面。</div>');
 </script></body></html>

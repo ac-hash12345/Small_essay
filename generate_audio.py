@@ -105,7 +105,7 @@ async def generate(args, entries):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--voice", default="en-US-AndrewNeural")
+    parser.add_argument("--voice", default="en-US-AvaNeural")
     parser.add_argument("--rate", default="+0%")
     parser.add_argument("--list", action="store_true", help="Print track IDs and texts without generating")
     args = parser.parse_args()
