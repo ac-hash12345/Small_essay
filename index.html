@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>十篇英语小作文背诵助手</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & Noto Sans SC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '"Noto Sans SC"', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased min-h-screen transition-colors duration-200 selection:bg-indigo-200 dark:selection:bg-indigo-800">
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Word Dictionary Modal / Popover -->
+  <div id="word-modal-backdrop" onclick="closeWordModal()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-50 hidden items-end sm:items-center justify-center p-0 sm:p-4 transition-opacity">
+    <div id="word-modal-card" onclick="event.stopPropagation()" class="w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 sm:p-6 transform transition-all">
+      <!-- Populated dynamically by JS -->
+    </div>
+  </div>
+
+  <!-- Mobile Sidebar Backdrop -->
+  <div id="sidebar-backdrop" onclick="toggleMobileSidebar(false)" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-30 hidden lg:hidden transition-opacity"></div>
+
+  <!-- Main App Layout -->
+  <div class="flex min-h-screen max-w-[1440px] mx-auto">
+
+    <!-- Left Sidebar (Essay List) -->
+    <aside id="sidebar" class="fixed lg:sticky top-0 left-0 z-40 h-screen w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-out shrink-0">
+      <!-- Sidebar Header -->
+      <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm font-bold text-lg">
+            文
+          </div>
+          <div>
+            <h1 class="font-bold text-sm text-slate-900 dark:text-white leading-tight">英语小作文背诵</h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400">精选 10 篇经典范文</p>
+          </div>
+        </div>
+        <button onclick="toggleMobileSidebar(false)" class="lg:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="关闭目录">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Overall Progress Bar -->
+      <div class="px-4 py-3 bg-slate-50/70 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800">
+        <div class="flex items-center justify-between text-xs mb-1.5">
+          <span class="font-medium text-slate-600 dark:text-slate-300">本次背诵进度</span>
+          <span id="overall-progress-text" class="font-semibold text-indigo-600 dark:text-indigo-400">0 / 10 篇已掌握</span>
+        </div>
+        <div class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+          <div id="overall-progress-bar" class="h-full bg-indigo-600 dark:bg-indigo-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Essay Navigation List -->
+      <nav id="essay-list" class="flex-1 overflow-y-auto p-3 space-y-1.5">
+        <!-- Populated dynamically by JS -->
+      </nav>
+
+      <!-- Sidebar Footer -->
+      <div class="p-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
+        <button onclick="toggleDarkMode()" class="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+          <span id="theme-icon">🌙</span>
+          <span id="theme-label">深色模式</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Right Main Content Area -->
+    <main class="flex-1 flex flex-col min-w-0">
+
+      <!-- Top Header Bar -->
+      <header class="sticky top-0 z-20 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-3">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <button onclick="toggleMobileSidebar(true)" class="lg:hidden p-2 -ml-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700" aria-label="打开目录">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span id="header-badge" class="px-2 py-0.5 text-xs font-semibold rounded-md bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 shrink-0">第 1 篇</span>
+                <h2 id="header-title" class="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate">建议信</h2>
+              </div>
+              <p id="header-subtitle" class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">P.48 经典范文004</p>
+            </div>
+          </div>
+
+          <!-- Header Actions -->
+          <div class="flex items-center gap-2">
+            <!-- TTS Full Play Button -->
+            <button id="btn-play-all" onclick="togglePlayAll()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+              <span id="play-all-icon">🔊</span>
+              <span id="play-all-text" class="hidden sm:inline">美音全文</span>
+            </button>
+
+            <!-- AI Voice Selector -->
+            <button id="btn-voice" onclick="cycleVoice()" title="切换美音音色" class="inline-flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/70 dark:border-indigo-800/70 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors">
+              <span>🎙️</span>
+              <span id="voice-label">美音女声</span>
+            </button>
+
+            <!-- Speed Toggle -->
+            <button id="btn-speed" onclick="cycleSpeechRate()" title="切换语速" class="px-2.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+              1.0x
+            </button>
+
+            <!-- Mastered Toggle -->
+            <button id="btn-master-essay" onclick="toggleEssayMastered()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border transition-colors">
+              <span id="master-icon">○</span>
+              <span id="master-text">标记掌握</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Mode Switcher Tabs -->
+        <div class="mt-3 flex items-center gap-1.5 overflow-x-auto pb-0.5">
+          <button onclick="switchMode('sentences')" data-mode="sentences" class="mode-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0">
+            📖 逐句精背
+          </button>
+          <button onclick="switchMode('cloze')" data-mode="cloze" class="mode-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0">
+            🧩 挖空填空
+          </button>
+          <button onclick="switchMode('dictation')" data-mode="dictation" class="mode-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0">
+            ✍️ 全文默写
+          </button>
+          <button onclick="switchMode('fulltext')" data-mode="fulltext" class="mode-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0">
+            📄 通读范文
+          </button>
+        </div>
+      </header>
+
+      <!-- Workspace Body -->
+      <div id="workspace" class="flex-1 p-4 sm:p-6 max-w-4xl w-full mx-auto">
+        <!-- Rendered dynamically based on active mode & active essay -->
+      </div>
+
+      <!-- Bottom Prev/Next Navigation -->
+      <footer class="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 sm:px-6 py-3 mt-auto">
+        <div class="max-w-4xl mx-auto flex items-center justify-between gap-4">
+          <button id="btn-prev-essay" onclick="navigateEssay(-1)" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            ← 上一篇
+          </button>
+          <span id="footer-counter" class="text-xs font-medium text-slate-500 dark:text-slate-400">1 / 10</span>
+          <button id="btn-next-essay" onclick="navigateEssay(1)" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            下一篇 →
+          </button>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Application Script -->
+  <script>
+    // =========================================================================
+    // 1. ESSAY DATA (All 10 Essays faithfully preserved from user's document)
+    // =========================================================================
+    const ESSAYS = [
+      {
+        id: 1,
+        title: '建议信',
+        subtitle: 'P.48 经典范文004 · 欢迎留学生并提建议',
+        category: '书信',
+        headerLines: [
+          { en: 'Dear Friends,', zh: '亲爱的朋友们：' }
+        ],
+        sentences: [
+          {
+            p: 1, label: '第一段：表示欢迎',
+            en: "On behalf of the Students' Union of Beijing Foreign Studies University, I would like to extend our heartfelt welcome to all the overseas students who will study in our university.",
+            zh: '我谨代表北京外国语大学学生会，向来我校学习的留学生表示衷心的欢迎。'
+          },
+          {
+            p: 2, label: '第二段：提出建议',
+            en: 'It is my great pleasure to offer you several practical suggestions.',
+            zh: '我很荣幸能给你们提一些实用的建议。'
+          },
+          {
+            p: 2,
+            en: 'In the first place, life in this prestigious university is perhaps not as easy as you have expected.',
+            zh: '首先，这所知名学府的生活也许并不像你们所设想的那么轻松。'
+          },
+          {
+            p: 2,
+            en: 'You may be tightly bound by daily classes, abundant homework and frequent exams.',
+            zh: '你们可能会面临每日的课程、大量的作业和频繁的考试。'
+          },
+          {
+            p: 2,
+            en: 'Thus, be prepared for the hectic life here.',
+            zh: '因此，做好准备迎接这里的繁忙生活吧。'
+          },
+          {
+            p: 2,
+            en: 'In the second place, in spite of all those burdens, various extracurricular activities such as sports meets, speech contests and social gatherings will still provide ample opportunities to make friends.',
+            zh: '其次，尽管有以上负担，运动会、演讲比赛以及联谊会等各种各样的课外活动仍会提供大量结交朋友的机会。'
+          },
+          {
+            p: 2,
+            en: 'So, enjoy your life in this esteemed institute!',
+            zh: '所以，尽情享受这所著名大学里的生活吧！'
+          },
+          {
+            p: 3, label: '第三段：总结与期望',
+            en: 'All in all, although there is a lot of pressure, the time you spend on our campus will be worthwhile and enhance your whole life.',
+            zh: '总之，尽管有很多压力，但你们在这所校园里度过的时光将意义非凡，并为你的整个人生增添光彩。'
+          },
+          {
+            p: 3,
+            en: 'Hope you like it here!',
+            zh: '希望你们喜欢这里！'
+          }
+        ],
+        footerLines: [
+          { en: 'Yours sincerely,', zh: '您真诚的，' },
+          { en: 'Li Ming', zh: '李明' }
+        ]
+      },
+      {
+        id: 2,
+        title: '介绍+邀请信',
+        subtitle: 'P.68 经典范文010 · 邀请参演《三国演义》短剧',
+        category: '书信',
+        headerLines: [
+          { en: 'Dear John,', zh: '亲爱的约翰：' }
+        ],
+        sentences: [
+          {
+            p: 1, label: '第一段：写作目的',
+            en: 'As you know, I am extremely keen on the ancient Chinese novel—Romance of the Three Kingdoms.',
+            zh: '如你所知，我非常喜欢《三国演义》这部中国古代小说。'
+          },
+          {
+            p: 1,
+            en: 'Now I am planning to direct a short play revised from it.',
+            zh: '现在我计划执导一部根据它改编的短剧。'
+          },
+          {
+            p: 2, label: '第二段：介绍短剧',
+            en: 'Romance of the Three Kingdoms, as one of the Four Great Classical Novels in China, mainly depicts the political and military struggles during the Three Kingdoms Period and reveals the turbulent society.',
+            zh: '《三国演义》作为中国四大名著之一，主要描写了三国时期的政治和军事斗争，揭示了当时动荡的社会。'
+          },
+          {
+            p: 2,
+            en: 'It successfully portrays images of classic characters, such as Zhuge Liang, Liu Bei, Guan Yu, Cao Cao, and so on.',
+            zh: '它成功地塑造了诸葛亮、刘备、关羽、曹操等经典人物形象。'
+          },
+          {
+            p: 3, label: '第三段：邀请参演',
+            en: 'Since you excel in acting, I cordially invite you to participate in the play and act as the leading hero, Zhuge Liang.',
+            zh: '由于你擅长表演，我诚挚地邀请你参演这部剧，扮演主人公诸葛亮。'
+          },
+          {
+            p: 3,
+            en: "I'm sure you will be quite interested in it.",
+            zh: '我相信你会非常感兴趣的。'
+          },
+          {
+            p: 3,
+            en: 'Looking forward to your reply.',
+            zh: '期待你的回信。'
+          }
+        ],
+        footerLines: [
+          { en: 'Yours,', zh: '你的，' },
+          { en: 'Li Ming', zh: '李明' }
+        ]
+      },
+      {
+        id: 3,
+        title: '介绍/推荐信',
+        subtitle: 'P.70 经典范文011 · 介绍中国名人孔子',
+        category: '书信',
+        headerLines: [
+          { en: 'Dear friends,', zh: '亲爱的朋友们：' }
+        ],
+        sentences: [
+          {
+            p: 1,
+            en: 'I am writing the email to recommend one of the most prestigious Chinese celebrities to you, Confucius.',
+            zh: '我写这封邮件是为了向你们介绍中国最知名的名人之一：孔子。'
+          },
+          {
+            p: 2,
+            en: 'First of all, being a great thinker, educator and founder of Confucianism, Confucius is an ancient sage during the Spring and Autumn Period.',
+            zh: '首先，孔子是一位大思想家、大教育家、儒家学派创始人、春秋时期的一位古代圣人。'
+          },
+          {
+            p: 2,
+            en: 'In addition, his words and life story were recorded by his disciples and their students in The Analects.',
+            zh: '其次，他的言论和生平活动记录在由他的弟子和再传弟子编成的《论语》一书中。'
+          },
+          {
+            p: 2,
+            en: 'As an enduring classic of ancient Chinese culture, The Analects has influenced all thinkers, writers and politicians in the over-2000-year-long history of China after Confucius.',
+            zh: '《论语》是中国古代文化的经典著作。在孔子以后两千多年的中国历史上，没有哪一位思想家、文学家、政治家不受《论语》的影响。'
+          },
+          {
+            p: 2,
+            en: 'Finally, much of Confucian thought still remains the interest of not only the Chinese people but also people in other parts of the world.',
+            zh: '最后，孔子的很多思想不仅仍然受到中国人的重视，而且受到整个国际社会的重视。'
+          },
+          {
+            p: 3,
+            en: 'If you have any questions about Confucius, please feel free to contact me.',
+            zh: '如果您对孔子有任何想了解的，请随时与我联系。'
+          }
+        ],
+        footerLines: [
+          { en: 'Yours sincerely,', zh: '您真诚的，' },
+          { en: 'Li Ming', zh: '李明' }
+        ]
+      },
+      {
+        id: 4,
+        title: '投诉信',
+        subtitle: 'P.73 经典范文013 · 投诉列车晚点与服务态度',
+        category: '书信',
+        headerLines: [
+          { en: 'Dear Sir or Madam,', zh: '尊敬的先生或女士：' }
+        ],
+        sentences: [
+          {
+            p: 1,
+            en: 'As a regular passenger of your train, I am extremely disappointed to find that the service provided recently has been far from satisfactory.',
+            zh: '作为贵列车的一位常客，我发现贵方近期提供的服务远远不能令人满意，对此我深感失望。'
+          },
+          {
+            p: 1,
+            en: 'Therefore, I am writing this letter to draw your attention to these issues in the hope that the present situation can be improved.',
+            zh: '因此，我写这封信是想引起您对这些问题的关注，希望能够改进现状。'
+          },
+          {
+            p: 2,
+            en: 'As we all know, punctuality is essential to the railway service.',
+            zh: '众所周知，准时对于铁路服务非常重要。'
+          },
+          {
+            p: 2,
+            en: 'However, the train has been delayed frequently, which has brought me much trouble and inconvenience.',
+            zh: '然而，这趟列车经常晚点，给我带来很多的麻烦和不便。'
+          },
+          {
+            p: 2,
+            en: 'Even worse are the poor attitude of some of your on-board staff.',
+            zh: '更糟糕的是，这趟列车部分乘务员的服务态度欠佳。'
+          },
+          {
+            p: 2,
+            en: 'Their service has not embodied the principle, "The customer should come first."',
+            zh: '他们的服务并未体现“顾客至上”的原则。'
+          },
+          {
+            p: 3,
+            en: 'I believe you will take this matter into serious consideration and provide a satisfactory reply as soon as possible.',
+            zh: '我相信您会认真考虑这个问题，并尽快给出满意的答复。'
+          },
+          {
+            p: 3,
+            en: 'At the same time, I sincerely hope that you will review your management system.',
+            zh: '同时，我真诚地希望您能审查管理系统。'
+          },
+          {
+            p: 3,
+            en: 'I would be glad to see improvements in your railway service.',
+            zh: '我将很高兴看到贵方列车服务的改进。'
+          }
+        ],
+        footerLines: [
+          { en: 'Yours sincerely,', zh: '您真诚的，' },
+          { en: 'Li Ming', zh: '李明' }
+        ]
+      },
+      {
+        id: 5,
+        title: '邀请信',
+        subtitle: 'P.74 经典范文014 · 邀请亚历山大教授作讲座',
+        category: '书信',
+        headerLines: [
+          { en: 'Dear Professor Alexander,', zh: '尊敬的亚历山大教授：' }
+        ],
+        sentences: [
+          {
+            p: 1,
+            en: 'On behalf of all the students at Beijing Foreign Studies University who share a love for the English language, I cordially invite you to give a lecture to us.',
+            zh: '我谨代表北京外国语大学全体热爱英语的学生，诚挚地邀请您给我们做一场演讲。'
+          },
+          {
+            p: 2,
+            en: 'As you are one of the leading experts in the English language all over the world, I believe that the students will not only be able to learn from you, but to be inspired by you as well.',
+            zh: '由于您是全世界英语语言方面杰出的专家之一，我相信学生们不仅能从您身上学到知识，而且也能够受到启发。'
+          },
+          {
+            p: 2,
+            en: 'We are hoping that you will be available for a lecture on our campus at 10:00 a.m. on January 4.',
+            zh: '我们期待您能抽出时间在1月4日上午10点来我校做一场演讲。'
+          },
+          {
+            p: 2,
+            en: 'There will be 45 minutes allocated for your lecture and 15 minutes for a question-and-answer session.',
+            zh: '其中45分钟将是您的演讲时间，另外15分钟则是问答环节。'
+          },
+          {
+            p: 3,
+            en: 'If you are interested in coming to our university for the lecture, you can email me at bfsuniversity@qq.com.',
+            zh: '如果您对此次来我校做演讲感兴趣，可以通过邮箱地址 bfsuniversity@qq.com 给我发电子邮件。'
+          },
+          {
+            p: 3,
+            en: 'We are looking forward to meeting you.',
+            zh: '我们期待与您相见。'
+          }
+        ],
+        footerLines: [
+          { en: 'Yours sincerely,', zh: '您真诚的，' },
+          { en: 'Li Ming', zh: '李明' }
+        ]
+      },
+      {
+        id: 6,
+        title: '感谢信',
+        subtitle: 'P.76 经典范文015 · 感谢交通事故中的及时急救',
+        category: '书信',
+        headerLines: [
+          { en: 'Dear Mr. Shakespeare,', zh: '尊敬的莎士比亚先生：' }
+        ],
+        sentences: [
+          {
+            p: 1,
+            en: 'I am writing to express my heartfelt gratitude.',
+            zh: '我写信是为了表达我衷心的感谢。'
+          },
+          {
+            p: 1,
+            en: 'I am referring to that unfortunate accident the other day, when I was knocked off my bike by a taxi.',
+            zh: '我指的是那天我被一辆出租车从自行车上撞下来的不幸事件。'
+          },
+          {
+            p: 2,
+            en: 'If it had not been for your timely assistance in giving me first aid, I fear that the consequences might have been very serious.',
+            zh: '如果不是您及时帮我进行急救处理的话，恐怕后果会很严重。'
+          },
+          {
+            p: 2,
+            en: 'Everyone agrees that it is your quick-witted response in that emergency that has led to this satisfactory outcome.',
+            zh: '大家都认为，正是您在那个紧急事件中的机智反应才促成了这样令人满意的结果。'
+          },
+          {
+            p: 3,
+            en: 'Although nowadays people in mounting numbers talk about the need to be unselfish, we see very few people practice what they preach.',
+            zh: '尽管现在越来越多的人谈论大公无私的必要性，但是我们看到很少有人言行一致。'
+          },
+          {
+            p: 3,
+            en: 'If there were more people like you, this world would be a much nicer place.',
+            zh: '如果有更多人像您一样的话，世界会更加美好。'
+          }
+        ],
+        footerLines: [
+          { en: 'Yours sincerely,', zh: '您真诚的，' },
+          { en: 'Li Ming', zh: '李明' }
+        ]
+      },
+      {
+        id: 7,
+        title: '道歉信',
+        subtitle: 'P.77 经典范文016 · 因手术无法参加面试请求改期',
+        category: '书信',
+        headerLines: [
+          { en: 'Dear Sir or Madam,', zh: '尊敬的先生或女士：' }
+        ],
+        sentences: [
+          {
+            p: 1,
+            en: 'I am sorry to say that I will not be able to attend the interview at 10:00 a.m. on Monday, December 28, 2026.',
+            zh: '很抱歉，我将无法参加 2026 年 12 月 28 日星期一上午 10 点的面试。'
+          },
+          {
+            p: 2,
+            en: 'Unfortunately, I have recently been diagnosed with a serious ear infection which will require surgery on the same day as our interview.',
+            zh: '很不幸，最近我被诊断出患上了一种严重的耳部感染疾病，需要在面试当天进行手术。'
+          },
+          {
+            p: 2,
+            en: 'If possible, I would like to postpone the interview to another day later in the week.',
+            zh: '如果可能的话，我希望将面试推迟至本周的其他时间。'
+          },
+          {
+            p: 2,
+            en: 'I promise that such a situation does not usually happen, and apologize for any inconvenience this may cause you.',
+            zh: '我保证类似的情况绝非经常发生，由此给您造成的任何不便，我深表歉意。'
+          },
+          {
+            p: 3,
+            en: 'I am looking forward to hearing from you and, again, am sorry for any trouble this may have caused.',
+            zh: '期待您的答复。对由此造成的麻烦，再一次表示歉意。'
+          },
+          {
+            p: 3,
+            en: 'Please excuse me for not being able to inform you of my situation sooner.',
+            zh: '请原谅我没能提早告知您我的情况。'
+          }
+        ],
+        footerLines: [
+          { en: 'Yours sincerely,', zh: '您真诚的，' },
+          { en: 'Li Ming', zh: '李明' }
+        ]
+      },
+      {
+        id: 8,
+        title: '求学/求职信/便条',
+        subtitle: 'P.78 经典范文017 · 申请线上中文家教职位',
+        category: '书信/便条',
+        headerLines: [
+          { en: 'Dear Sir or Madam,', zh: '尊敬的先生或女士：' }
+        ],
+        sentences: [
+          {
+            p: 1,
+            en: "I'm writing the note to apply for the job of teaching your daughter Chinese online.",
+            zh: '我写这封便条是为了申请在网上教您女儿中文的工作。'
+          },
+          {
+            p: 2,
+            en: 'I am sure that I am the suitable candidate for this position for several reasons.',
+            zh: '我确信我是这个职位的合适人选，原因如下。'
+          },
+          {
+            p: 2,
+            en: "Firstly, I graduated from Peking University with a bachelor's degree.",
+            zh: '首先，我毕业于北京大学并获得了学士学位。'
+          },
+          {
+            p: 2,
+            en: 'Enclosed with this note is my résumé, which details my previous academic qualifications.',
+            zh: '随信附上我的个人简历，详述了我以前的学历。'
+          },
+          {
+            p: 2,
+            en: 'Secondly, I have been teaching kids from 8 to 12 years old since I entered college.',
+            zh: '其次，自从进入大学，我就一直在教8到12岁的孩子。'
+          },
+          {
+            p: 2,
+            en: 'Not only do my qualifications and experiences make me a perfect candidate, but my cheerful personality is also well suited to work as a native tutor.',
+            zh: '不仅我的资历和经历使我成为完美的人选，而且我开朗的性格也非常适合做母语家教。'
+          },
+          {
+            p: 2,
+            en: 'Lastly, I am available every Sunday from 2 p.m. to 6 p.m.',
+            zh: '最后，我每周日下午2点到6点都可以工作。'
+          },
+          {
+            p: 3,
+            en: 'If you could grant me an interview, I would appreciate it.',
+            zh: '如果您能给我一次面试的机会，我将非常感谢。'
+          }
+        ],
+        footerLines: [
+          { en: 'Yours sincerely,', zh: '您真诚的，' },
+          { en: 'Li Ming', zh: '李明' }
+        ]
+      },
+      {
+        id: 9,
+        title: '告示',
+        subtitle: 'P.81 经典范文019 · 英语俱乐部招新启事',
+        category: '告示',
+        headerLines: [
+          { en: 'Notice', zh: '告 示', center: true },
+          { en: 'December 21, 2026', zh: '2026 年 12 月 21 日', right: true }
+        ],
+        sentences: [
+          {
+            p: 1,
+            en: 'Welcome to the English Club!',
+            zh: '欢迎加入英语俱乐部！'
+          },
+          {
+            p: 1,
+            en: 'This club serves as a platform to demonstrate your outstanding English abilities and to help you develop a range of English skills.',
+            zh: '这个平台可以让你展示自己出色的英语能力，并帮助你提高各项英语技能。'
+          },
+          {
+            p: 2,
+            en: 'You can be involved in a variety of activities, including staging musical dramas, attending group discussions, watching Oscar-winning movies, and taking part in speeches and debates.',
+            zh: '你可以参加各种各样的活动，包括表演音乐剧、参与小组讨论、观看奥斯卡获奖影片、参加演讲和辩论活动。'
+          },
+          {
+            p: 2,
+            en: 'These extracurricular activities are highly beneficial in multiple regards.',
+            zh: '这些课外活动在很多方面都大有裨益。'
+          },
+          {
+            p: 2,
+            en: 'First, your active participation will help in strengthening your sense of responsibility and developing interpersonal relations.',
+            zh: '首先，积极参与将有助于增强你的责任感和培养人际关系。'
+          },
+          {
+            p: 2,
+            en: 'Second, various activities organized by us can improve your level of proficiency in English.',
+            zh: '其次，我们组织的丰富活动能提高你的英语熟练程度。'
+          },
+          {
+            p: 2,
+            en: 'A good command of English will enable you to get an edge over your peers.',
+            zh: '良好的英语水平将使你比其他同龄人略胜一筹。'
+          },
+          {
+            p: 3,
+            en: 'You can submit a written application for membership to our office or email us at englishclub@163.com.',
+            zh: '想成为会员的话，你可以把书面申请交到我们的办公室或发电子邮件到 englishclub@163.com。'
+          },
+          {
+            p: 3,
+            en: 'The deadline for applications is January 22.',
+            zh: '报名截止日期是 1 月 22 日。'
+          },
+          {
+            p: 3,
+            en: 'Come and join us now!',
+            zh: '现在就来加入我们吧！'
+          }
+        ],
+        footerLines: [
+          { en: 'English Club', zh: '英语俱乐部' }
+        ]
+      },
+      {
+        id: 10,
+        title: '纪要',
+        subtitle: 'P.83 经典范文020 · “为希望工程做贡献”班会纪要',
+        category: '纪要',
+        headerLines: [
+          { en: 'Minutes of class meeting on "Contributing to Project Hope"', zh: '“为希望工程做贡献”班会纪要', bold: true },
+          { en: 'Time: 10 a.m. to 11 a.m. on December 14, 2026', zh: '时间：2026年12月14日上午10点至11点' },
+          { en: 'Place: Room 102, the Student Recreation Center', zh: '地点：学生活动中心102室' },
+          { en: 'Present: All members of the class', zh: '出席人：全班所有成员' },
+          { en: 'Presided by: Zhang Wei', zh: '主持人：张伟' },
+          { en: 'Summary of the meeting:', zh: '会议概要：', bold: true }
+        ],
+        sentences: [
+          {
+            p: 1,
+            en: 'I am attaching the minutes of the last class meeting for your review. The summary of the meeting on Contributing to Project Hope is as follows.',
+            zh: '现将上次班会的会议纪要附上以便大家审核。关于为希望工程做贡献的会议纪要如下。'
+          },
+          {
+            p: 2,
+            en: 'Firstly, moved by the noble cause of Project Hope and encouraged by what has been achieved so far, we agreed to contribute our part to the project by offering financial aid to a senior high school student in a remote area of Sichuan Province.',
+            zh: '首先，希望工程这项高尚的事业感动了我们，同时这项工程迄今所取得的成就使我们备受鼓舞。因此，我们一致同意给四川省偏远地区的一名高中生提供经济方面的援助，以此为希望工程贡献我们的微薄之力。'
+          },
+          {
+            p: 2,
+            en: 'Secondly, we will seek out a girl whose family cannot afford her education.',
+            zh: '其次，我们将找到一个家庭无法负担其教育的女孩。'
+          },
+          {
+            p: 2,
+            en: 'Lastly, our plan is to pay for her tuition on an annual basis until she graduates from high school.',
+            zh: '最后，我们计划每年为她支付学费，直至她高中毕业。'
+          },
+          {
+            p: 2,
+            en: 'We would like to remit our donation directly to a bank account opened by her family in her local area.',
+            zh: '我们将把捐款直接汇入她的家人在当地开设的银行账户中。'
+          },
+          {
+            p: 3,
+            en: 'If you discover any errors or omissions in the minutes, please inform me.',
+            zh: '如果大家发现会议纪要中有错误或遗漏，请告知我。'
+          }
+        ],
+        footerLines: [
+          { en: 'Submitted by: Li Ming', zh: '提交人：李明' },
+          { en: 'Date: December 15, 2026', zh: '日期：2026年12月15日' }
+        ]
+      }
+    ];
+
+    // =========================================================================
+    // 2. IN-MEMORY APPLICATION STATE
+    // =========================================================================
+    const state = {
+      currentEssayId: 1,
+      mode: 'sentences', // 'sentences' | 'cloze' | 'dictation' | 'fulltext'
+      sentenceDisplayMode: 'both', // 'both' | 'hideEn' | 'firstLetter' | 'hideZh'
+      revealedSentences: new Set(), // keys like "1-0"
+      starredSentences: new Set(),  // keys like "1-2"
+      masteredEssays: new Set(),    // essay ids
+      clozeDifficulty: 0.35,        // 0.25 | 0.35 | 0.55
+      clozeInputMode: 'click',      // 'click' | 'type'
+      clozeSeed: 1,
+      clozeRevealed: new Set(),
+      clozeTyped: {},               // key -> user string
+      clozeChecked: false,
+      dictationDrafts: {},          // essayId -> text
+      dictationResult: null,
+      speechRate: 1.0,
+      isPlayingAll: false,
+      ttsVoice: 'Aoede',            // AI American English voice
+      ttsLoadingKey: null,          // 'all' | 'sent-0' | 'word' | null
+      playingKey: null,             // tracks currently playing audio key
+      darkMode: false
+    };
+
+    // Available expressive AI American English voices
+    const AI_VOICES = [
+      { id: 'Aoede', label: '美音女声', desc: '自然流畅 · 美剧感' },
+      { id: 'Puck', label: '美音男声', desc: '轻快地道 · 富有节奏' },
+      { id: 'Sulafat', label: '温暖女声', desc: '温柔磁性 · 抑扬顿挫' },
+      { id: 'Charon', label: '沉稳男声', desc: '清晰饱满 · 播音质感' }
+    ];
+
+    // In-memory caches for instant replay and repeat word lookups
+    const ttsAudioCache = new Map();
+    const wordDictCache = new Map();
+    let currentAudioEl = null;
+
+    const STOP_WORDS = new Set([
+      'a','an','the','is','am','are','was','were','be','to','of','in','on','at','for','and','or','but','if','as','by','it','we','you','i','my','your','our','his','her','its','this','that','with','from'
+    ]);
+
+    // =========================================================================
+    // 3. UTILITY FUNCTIONS
+    // =========================================================================
+    function getCurrentEssay() {
+      return ESSAYS.find(e => e.id === state.currentEssayId) || ESSAYS[0];
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getFullText(essay, lang = 'en') {
+      const header = essay.headerLines.map(l => l[lang]).join('\n');
+      const paraMap = new Map();
+      essay.sentences.forEach(s => {
+        if (!paraMap.has(s.p)) paraMap.set(s.p, []);
+        paraMap.get(s.p).push(s[lang]);
+      });
+      const joiner = lang === 'en' ? ' ' : '';
+      const body = Array.from(paraMap.values()).map(list => list.join(joiner)).join('\n\n');
+      const footer = essay.footerLines.map(l => l[lang]).join('\n');
+      return `${header}\n\n${body}\n\n${footer}`;
+    }
+
+    function toFirstLetterHint(text) {
+      return text.replace(/[A-Za-zÀ-ÿ]+/g, word => {
+        if (word.length <= 1) return word;
+        return word[0] + '_'.repeat(Math.min(word.length - 1, 5));
+      });
+    }
+
+    function seededRandom(seed) {
+      const x = Math.sin(seed) * 10000;
+      return x - Math.floor(x);
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      const colorClass = type === 'success'
+        ? 'bg-emerald-600 text-white'
+        : type === 'error'
+          ? 'bg-rose-600 text-white'
+          : 'bg-slate-800 dark:bg-slate-700 text-white';
+      toast.className = `pointer-events-auto px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium shadow-lg transition-all duration-300 transform translate-y-2 opacity-0 ${colorClass}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 2600);
+    }
+
+    function copyText(text, successMsg = '已复制到剪贴板') {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.top = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showToast(successMsg, 'success');
+      } catch (err) {
+        showToast('复制失败，请手动选中复制', 'error');
+      }
+    }
+
+    // =========================================================================
+    // 4. AI NATURAL AMERICAN ENGLISH TTS & DICTIONARY (Gemini API + Fallback)
+    // =========================================================================
+    const GEMINI_API_KEY = ""; // Runtime-provided
+
+    // Exponential backoff fetch wrapper for Gemini API
+    async function fetchGeminiWithRetry(url, payload, maxRetries = 4) {
+      let delay = 1000;
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (response.ok) {
+            return await response.json();
+          }
+          if (response.status === 429 || response.status >= 500) {
+            if (attempt < maxRetries) {
+              await new Promise(r => setTimeout(r, delay));
+              delay *= 2;
+              continue;
+            }
+          }
+          throw new Error(`HTTP ${response.status}`);
+        } catch (err) {
+          if (attempt < maxRetries) {
+            await new Promise(r => setTimeout(r, delay));
+            delay *= 2;
+            continue;
+          }
+          throw err;
+        }
+      }
+    }
+
+    // Convert base64 string to ArrayBuffer
+    function base64ToArrayBuffer(base64) {
+      const binaryString = atob(base64);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return bytes.buffer;
+    }
+
+    // Wrap raw signed 16-bit PCM data in a standard WAV container
+    function pcmToWav(pcm16, sampleRate = 24000, numChannels = 1) {
+      const byteRate = sampleRate * numChannels * 2;
+      const blockAlign = numChannels * 2;
+      const dataSize = pcm16.length * 2;
+      const buffer = new ArrayBuffer(44 + dataSize);
+      const view = new DataView(buffer);
+
+      const writeStr = (offset, str) => {
+        for (let i = 0; i < str.length; i++) {
+          view.setUint8(offset + i, str.charCodeAt(i));
+        }
+      };
+
+      writeStr(0, 'RIFF');
+      view.setUint32(4, 36 + dataSize, true);
+      writeStr(8, 'WAVE');
+      writeStr(12, 'fmt ');
+      view.setUint32(16, 16, true);           // Subchunk1Size (PCM)
+      view.setUint16(20, 1, true);            // AudioFormat (1 = PCM)
+      view.setUint16(22, numChannels, true);  // NumChannels
+      view.setUint32(24, sampleRate, true);   // SampleRate
+      view.setUint32(28, byteRate, true);     // ByteRate
+      view.setUint16(32, blockAlign, true);   // BlockAlign
+      view.setUint16(34, 16, true);           // BitsPerSample
+      writeStr(36, 'data');
+      view.setUint32(40, dataSize, true);
+
+      let offset = 44;
+      for (let i = 0; i < pcm16.length; i++, offset += 2) {
+        view.setInt16(offset, pcm16[i], true);
+      }
+      return new Blob([buffer], { type: 'audio/wav' });
+    }
+
+    function stopSpeech() {
+      if (currentAudioEl) {
+        currentAudioEl.pause();
+        currentAudioEl.currentTime = 0;
+        currentAudioEl = null;
+      }
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      state.isPlayingAll = false;
+      state.ttsLoadingKey = null;
+      state.playingKey = null;
+      updatePlayAllButton();
+      updateSentenceAudioIcons();
+    }
+
+    // Fallback to browser Web Speech API if AI TTS is unavailable
+    function fallbackBrowserSpeak(text, onEndCallback = null) {
+      if (!('speechSynthesis' in window)) {
+        showToast('当前浏览器不支持语音朗读功能', 'error');
+        if (onEndCallback) onEndCallback();
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = state.speechRate;
+      const voices = window.speechSynthesis.getVoices();
+      const preferred = voices.find(v => /Google US English|Samantha|Aria|Jenny|Natural/i.test(v.name) && v.lang.startsWith('en-US'))
+        || voices.find(v => v.lang.startsWith('en-US'))
+        || voices.find(v => v.lang.startsWith('en'));
+      if (preferred) utterance.voice = preferred;
+      utterance.onend = () => { if (onEndCallback) onEndCallback(); };
+      utterance.onerror = () => { if (onEndCallback) onEndCallback(); };
+      window.speechSynthesis.speak(utterance);
+    }
+
+    // Play expressive American English via Gemini TTS (with caching & fallback)
+    async function speakWithAI(text, { key = 'sent', isWord = false, onEnd = null } = {}) {
+      stopSpeech();
+      const cacheKey = `${state.ttsVoice}::${isWord ? 'W' : 'S'}::${text}`;
+
+      const playAudioUrl = (url) => {
+        const audio = new Audio(url);
+        audio.playbackRate = state.speechRate;
+        currentAudioEl = audio;
+        state.playingKey = key;
+        if (key === 'all') state.isPlayingAll = true;
+        updatePlayAllButton();
+        updateSentenceAudioIcons();
+
+        audio.onended = () => {
+          currentAudioEl = null;
+          state.playingKey = null;
+          if (key === 'all') state.isPlayingAll = false;
+          updatePlayAllButton();
+          updateSentenceAudioIcons();
+          if (onEnd) onEnd();
+        };
+        audio.onerror = () => {
+          currentAudioEl = null;
+          state.playingKey = null;
+          if (key === 'all') state.isPlayingAll = false;
+          updatePlayAllButton();
+          updateSentenceAudioIcons();
+        };
+        audio.play().catch(() => {
+          fallbackBrowserSpeak(text, onEnd);
+        });
+      };
+
+      // Use cached audio immediately if available
+      if (ttsAudioCache.has(cacheKey)) {
+        playAudioUrl(ttsAudioCache.get(cacheKey));
+        return;
+      }
+
+      // Show loading state while generating expressive American English audio
+      state.ttsLoadingKey = key;
+      updatePlayAllButton();
+      updateSentenceAudioIcons();
+
+      try {
+        const stylePrompt = isWord
+          ? `Pronounce the following English word clearly and naturally in standard American English: ${text}`
+          : `Read the following English passage aloud in a natural, expressive standard American English accent—just like a native speaker in a modern American TV drama, with warm tone, authentic rising and falling intonation, natural phrasing, and subtle emotional emphasis:\n\n${text}`;
+
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${GEMINI_API_KEY}`;
+        const payload = {
+          contents: [{ parts: [{ text: stylePrompt }] }],
+          generationConfig: {
+            responseModalities: ["AUDIO"],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: state.ttsVoice }
+              }
+            }
+          },
+          model: "gemini-2.5-flash-preview-tts"
+        };
+
+        const result = await fetchGeminiWithRetry(apiUrl, payload);
+        const part = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+        const audioData = part?.inlineData?.data;
+        const mimeType = part?.inlineData?.mimeType || 'audio/L16;rate=24000';
+
+        // If user cancelled or started another playback while loading, abort
+        if (state.ttsLoadingKey !== key) return;
+        state.ttsLoadingKey = null;
+
+        if (audioData && mimeType.startsWith('audio/')) {
+          const rateMatch = mimeType.match(/rate=(\d+)/);
+          const sampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 24000;
+          const pcmBuffer = base64ToArrayBuffer(audioData);
+          const pcm16 = new Int16Array(pcmBuffer);
+          const wavBlob = pcmToWav(pcm16, sampleRate);
+          const audioUrl = URL.createObjectURL(wavBlob);
+          ttsAudioCache.set(cacheKey, audioUrl);
+          playAudioUrl(audioUrl);
+        } else {
+          throw new Error('No audio data returned');
+        }
+      } catch (err) {
+        if (state.ttsLoadingKey === key) state.ttsLoadingKey = null;
+        updatePlayAllButton();
+        updateSentenceAudioIcons();
+        showToast('AI 美音暂不可用，已切换为浏览器朗读', 'info');
+        if (key === 'all') {
+          state.isPlayingAll = true;
+          updatePlayAllButton();
+        }
+        fallbackBrowserSpeak(text, () => {
+          state.isPlayingAll = false;
+          updatePlayAllButton();
+          if (onEnd) onEnd();
+        });
+      }
+    }
+
+    function togglePlayAll() {
+      if (state.isPlayingAll || state.ttsLoadingKey === 'all') {
+        stopSpeech();
+        return;
+      }
+      const essay = getCurrentEssay();
+      const fullEn = getFullText(essay, 'en');
+      speakWithAI(fullEn, { key: 'all' });
+    }
+
+    function updatePlayAllButton() {
+      const icon = document.getElementById('play-all-icon');
+      const text = document.getElementById('play-all-text');
+      const btn = document.getElementById('btn-play-all');
+      if (!btn) return;
+      if (state.ttsLoadingKey === 'all') {
+        icon.textContent = '⏳';
+        text.textContent = '生成美音...';
+        btn.classList.add('ring-2', 'ring-indigo-400');
+      } else if (state.isPlayingAll) {
+        icon.textContent = '⏹️';
+        text.textContent = '停止朗读';
+        btn.classList.add('ring-2', 'ring-indigo-500');
+      } else {
+        icon.textContent = '🔊';
+        text.textContent = '美音全文';
+        btn.classList.remove('ring-2', 'ring-indigo-500', 'ring-indigo-400');
+      }
+    }
+
+    function updateSentenceAudioIcons() {
+      document.querySelectorAll('[data-sent-audio]').forEach(btn => {
+        const key = btn.dataset.sentAudio;
+        if (state.ttsLoadingKey === key) {
+          btn.textContent = '⏳';
+        } else if (state.playingKey === key) {
+          btn.textContent = '⏹️';
+        } else {
+          btn.textContent = '🔊';
+        }
+      });
+    }
+
+    function cycleVoice() {
+      stopSpeech();
+      const idx = AI_VOICES.findIndex(v => v.id === state.ttsVoice);
+      const next = AI_VOICES[(idx + 1) % AI_VOICES.length];
+      state.ttsVoice = next.id;
+      document.getElementById('voice-label').textContent = next.label;
+      showToast(`已切换音色：${next.label}（${next.desc}）`);
+    }
+
+    function cycleSpeechRate() {
+      const rates = [0.8, 1.0, 1.2];
+      const nextIdx = (rates.indexOf(state.speechRate) + 1) % rates.length;
+      state.speechRate = rates[nextIdx];
+      document.getElementById('btn-speed').textContent = state.speechRate.toFixed(1) + 'x';
+      if (currentAudioEl) {
+        currentAudioEl.playbackRate = state.speechRate;
+      }
+      showToast(`朗读语速已设为 ${state.speechRate.toFixed(1)}x`);
+    }
+
+    // =========================================================================
+    // 4.5 CLICK-TO-LOOKUP DICTIONARY (Contextual Meaning, US IPA & Audio)
+    // =========================================================================
+    function renderInteractiveEnglish(text, sentenceIndex) {
+      // Split text preserving words (including hyphenated/accented/apostrophe words) and punctuation
+      const tokens = text.split(/([A-Za-zÀ-ÿ]+(?:['’-][A-Za-zÀ-ÿ]+)*)/);
+      return tokens.map(token => {
+        if (/^[A-Za-zÀ-ÿ]+(?:['’-][A-Za-zÀ-ÿ]+)*$/.test(token)) {
+          const safeWord = token.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+          return `<span onclick="lookupWord('${safeWord}', ${sentenceIndex}, event)" title="点击查词：${escapeHtml(token)}" class="cursor-pointer rounded px-0.5 -mx-0.5 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">${escapeHtml(token)}</span>`;
+        }
+        return escapeHtml(token);
+      }).join('');
+    }
+
+    async function lookupWord(word, sentenceIdx, event) {
+      if (event) event.stopPropagation();
+      const essay = getCurrentEssay();
+      const contextSentence = (sentenceIdx >= 0 && essay.sentences[sentenceIdx])
+        ? essay.sentences[sentenceIdx].en
+        : '';
+
+      const cleanWord = word.trim();
+      const cacheKey = `${cleanWord.toLowerCase()}::${sentenceIdx >= 0 ? essay.id + '-' + sentenceIdx : 'general'}`;
+
+      openWordModal({ word: cleanWord, loading: true });
+
+      if (wordDictCache.has(cacheKey)) {
+        openWordModal({ ...wordDictCache.get(cacheKey), loading: false });
+        return;
+      }
+
+      try {
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_API_KEY}`;
+        const prompt = `你是一位专业的中国考研/四六级英语名师。请解释英语单词 "${cleanWord}"${contextSentence ? ` 在以下句子中的含义：\n"${contextSentence}"` : ''}。\n要求：\n1. phonetic 给出标准美式音标（例如 /prəˈstɪdʒəs/）。\n2. pos 给出该词在句中的词性缩写（例如 adj. / v. / n.）。\n3. meaning 给出简洁精准的中文释义（优先贴合当前句意，如有其他高频义项可用分号简要补充）。\n4. collocation 如果该词在句中构成高频固定搭配或词组，请提取出来并附简短中文（例如 "on behalf of 代表"），否则留空字符串。\n5. tip 一句话记忆技巧或写作高分替换词（25字以内）。`;
+
+        const payload = {
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: {
+                word: { type: "STRING" },
+                phonetic: { type: "STRING" },
+                pos: { type: "STRING" },
+                meaning: { type: "STRING" },
+                collocation: { type: "STRING" },
+                tip: { type: "STRING" }
+              },
+              required: ["word", "phonetic", "pos", "meaning"]
+            }
+          }
+        };
+
+        const result = await fetchGeminiWithRetry(apiUrl, payload);
+        const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!jsonText) throw new Error('Empty dictionary response');
+        const parsed = JSON.parse(jsonText);
+        const entry = {
+          word: parsed.word || cleanWord,
+          phonetic: parsed.phonetic || '',
+          pos: parsed.pos || '',
+          meaning: parsed.meaning || '暂无释义',
+          collocation: parsed.collocation || '',
+          tip: parsed.tip || ''
+        };
+        wordDictCache.set(cacheKey, entry);
+
+        // Only update modal if it's still open
+        const backdrop = document.getElementById('word-modal-backdrop');
+        if (backdrop && !backdrop.classList.contains('hidden')) {
+          openWordModal({ ...entry, loading: false });
+        }
+      } catch (err) {
+        openWordModal({
+          word: cleanWord,
+          loading: false,
+          error: '查词服务暂时繁忙，你可以先点击右上角听发音，或稍后重试。'
+        });
+      }
+    }
+
+    function openWordModal(data) {
+      const backdrop = document.getElementById('word-modal-backdrop');
+      const card = document.getElementById('word-modal-card');
+      const safeWordJs = data.word.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+      if (data.loading) {
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <h3 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">${escapeHtml(data.word)}</h3>
+              <p class="text-xs text-slate-400 mt-1">正在查询美式音标与语境释义...</p>
+            </div>
+            <button onclick="closeWordModal()" class="p-2 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="关闭">✕</button>
+          </div>
+          <div class="space-y-3 animate-pulse py-2">
+            <div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/3"></div>
+            <div class="h-5 bg-slate-200 dark:bg-slate-800 rounded w-5/6"></div>
+            <div class="h-12 bg-slate-100 dark:bg-slate-800/70 rounded-xl w-full"></div>
+          </div>
+        `;
+      } else if (data.error) {
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <h3 class="text-2xl font-bold text-slate-900 dark:text-white">${escapeHtml(data.word)}</h3>
+            <div class="flex items-center gap-1.5">
+              <button onclick="speakWithAI('${safeWordJs}', { key: 'word', isWord: true })" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700">🔊 发音</button>
+              <button onclick="closeWordModal()" class="p-2 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">✕</button>
+            </div>
+          </div>
+          <p class="text-sm text-rose-500 dark:text-rose-400">${escapeHtml(data.error)}</p>
+        `;
+      } else {
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div>
+              <div class="flex items-center gap-2.5 flex-wrap">
+                <h3 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">${escapeHtml(data.word)}</h3>
+                ${data.pos ? `<span class="px-2 py-0.5 rounded-md text-xs font-bold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">${escapeHtml(data.pos)}</span>` : ''}
+              </div>
+              ${data.phonetic ? `<div class="mt-1 flex items-center gap-2"><span class="text-xs px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium">美</span><span class="font-mono text-sm text-slate-600 dark:text-slate-300">${escapeHtml(data.phonetic)}</span></div>` : ''}
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button onclick="speakWithAI('${safeWordJs}', { key: 'word', isWord: true })" class="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs transition-colors">
+                <span>🔊</span>
+                <span>美音</span>
+              </button>
+              <button onclick="closeWordModal()" class="p-2 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" aria-label="关闭">✕</button>
+            </div>
+          </div>
+
+          <div class="mt-4 space-y-3">
+            <div>
+              <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">语境释义</div>
+              <p class="text-base font-medium text-slate-900 dark:text-slate-100 leading-relaxed">${escapeHtml(data.meaning)}</p>
+            </div>
+
+            ${data.collocation ? `
+              <div class="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50">
+                <div class="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 mb-0.5">✨ 本句高频搭配</div>
+                <p class="text-sm font-medium text-slate-800 dark:text-slate-200">${escapeHtml(data.collocation)}</p>
+              </div>
+            ` : ''}
+
+            ${data.tip ? `
+              <div class="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/40">
+                <div class="text-[11px] font-semibold text-amber-700 dark:text-amber-400 mb-0.5">💡 记忆 / 写作贴士</div>
+                <p class="text-xs sm:text-sm text-slate-700 dark:text-slate-300">${escapeHtml(data.tip)}</p>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      backdrop.classList.remove('hidden');
+      backdrop.classList.add('flex');
+    }
+
+    function closeWordModal() {
+      const backdrop = document.getElementById('word-modal-backdrop');
+      if (backdrop) {
+        backdrop.classList.add('hidden');
+        backdrop.classList.remove('flex');
+      }
+    }
+    // =========================================================================
+    // 5. NAVIGATION & GLOBAL CONTROLS
+    // =========================================================================
+    function selectEssay(id) {
+      stopSpeech();
+      state.currentEssayId = id;
+      state.clozeRevealed.clear();
+      state.clozeTyped = {};
+      state.clozeChecked = false;
+      state.dictationResult = null;
+      toggleMobileSidebar(false);
+      renderAll();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function navigateEssay(delta) {
+      const nextId = state.currentEssayId + delta;
+      if (nextId >= 1 && nextId <= ESSAYS.length) {
+        selectEssay(nextId);
+      }
+    }
+
+    function switchMode(newMode) {
+      stopSpeech();
+      state.mode = newMode;
+      renderAll();
+    }
+
+    function toggleEssayMastered() {
+      const id = state.currentEssayId;
+      if (state.masteredEssays.has(id)) {
+        state.masteredEssays.delete(id);
+        showToast('已取消掌握标记');
+      } else {
+        state.masteredEssays.add(id);
+        showToast(`太棒了！第 ${id} 篇已标记为掌握 🎉`, 'success');
+      }
+      renderSidebar();
+      renderHeader();
+    }
+
+    function toggleMobileSidebar(show) {
+      const sidebar = document.getElementById('sidebar');
+      const backdrop = document.getElementById('sidebar-backdrop');
+      if (show) {
+        sidebar.classList.remove('-translate-x-full');
+        backdrop.classList.remove('hidden');
+      } else {
+        sidebar.classList.add('-translate-x-full');
+        backdrop.classList.add('hidden');
+      }
+    }
+
+    function toggleDarkMode() {
+      state.darkMode = !state.darkMode;
+      document.documentElement.classList.toggle('dark', state.darkMode);
+      document.getElementById('theme-icon').textContent = state.darkMode ? '☀️' : '🌙';
+      document.getElementById('theme-label').textContent = state.darkMode ? '浅色模式' : '深色模式';
+    }
+
+    // =========================================================================
+    // 6. RENDERING FUNCTIONS
+    // =========================================================================
+    function renderAll() {
+      renderSidebar();
+      renderHeader();
+      renderFooter();
+      renderWorkspace();
+    }
+
+    function renderSidebar() {
+      const listEl = document.getElementById('essay-list');
+      const masteredCount = state.masteredEssays.size;
+      document.getElementById('overall-progress-text').textContent = `${masteredCount} / ${ESSAYS.length} 篇已掌握`;
+      document.getElementById('overall-progress-bar').style.width = `${(masteredCount / ESSAYS.length) * 100}%`;
+
+      listEl.innerHTML = ESSAYS.map(essay => {
+        const isActive = essay.id === state.currentEssayId;
+        const isMastered = state.masteredEssays.has(essay.id);
+        return `
+          <button onclick="selectEssay(${essay.id})" class="w-full text-left p-3 rounded-xl transition-all flex items-start gap-3 ${
+            isActive
+              ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-800/80 shadow-xs'
+              : 'hover:bg-slate-100 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300'
+          }">
+            <span class="w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 ${
+              isMastered
+                ? 'bg-emerald-500 text-white'
+                : isActive
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+            }">
+              ${isMastered ? '✓' : essay.id}
+            </span>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between gap-1">
+                <span class="font-semibold text-sm truncate">${escapeHtml(essay.title)}</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300 shrink-0">${escapeHtml(essay.category)}</span>
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">${escapeHtml(essay.subtitle.split('·')[1] || essay.subtitle)}</p>
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function renderHeader() {
+      const essay = getCurrentEssay();
+      document.getElementById('header-badge').textContent = `第 ${essay.id} 篇`;
+      document.getElementById('header-title').textContent = essay.title;
+      document.getElementById('header-subtitle').textContent = essay.subtitle;
+
+      // Mastered button styling
+      const isMastered = state.masteredEssays.has(essay.id);
+      const btnMaster = document.getElementById('btn-master-essay');
+      document.getElementById('master-icon').textContent = isMastered ? '✓' : '○';
+      document.getElementById('master-text').textContent = isMastered ? '已掌握' : '标记掌握';
+      btnMaster.className = `inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border transition-colors ${
+        isMastered
+          ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300'
+          : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+      }`;
+
+      // Mode tabs styling
+      document.querySelectorAll('.mode-tab').forEach(tab => {
+        const active = tab.dataset.mode === state.mode;
+        tab.className = `mode-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0 ${
+          active
+            ? 'bg-indigo-600 text-white shadow-sm'
+            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+        }`;
+      });
+    }
+
+    function renderFooter() {
+      document.getElementById('footer-counter').textContent = `第 ${state.currentEssayId} / ${ESSAYS.length} 篇`;
+      document.getElementById('btn-prev-essay').disabled = state.currentEssayId <= 1;
+      document.getElementById('btn-next-essay').disabled = state.currentEssayId >= ESSAYS.length;
+    }
+
+    function renderWorkspace() {
+      const workspace = document.getElementById('workspace');
+      const essay = getCurrentEssay();
+      if (state.mode === 'sentences') {
+        workspace.innerHTML = buildSentencesView(essay);
+      } else if (state.mode === 'cloze') {
+        workspace.innerHTML = buildClozeView(essay);
+      } else if (state.mode === 'dictation') {
+        workspace.innerHTML = buildDictationView(essay);
+      } else if (state.mode === 'fulltext') {
+        workspace.innerHTML = buildFullTextView(essay);
+      }
+    }
+
+    // =========================================================================
+    // 7. MODE 1: SENTENCE-BY-SENTENCE MEMORIZATION
+    // =========================================================================
+    function setSentenceDisplayMode(mode) {
+      state.sentenceDisplayMode = mode;
+      state.revealedSentences.clear();
+      renderWorkspace();
+    }
+
+    function toggleRevealSentence(key) {
+      if (state.revealedSentences.has(key)) {
+        state.revealedSentences.delete(key);
+      } else {
+        state.revealedSentences.add(key);
+      }
+      renderWorkspace();
+    }
+
+    function toggleStarSentence(key, event) {
+      event.stopPropagation();
+      if (state.starredSentences.has(key)) {
+        state.starredSentences.delete(key);
+      } else {
+        state.starredSentences.add(key);
+      }
+      renderWorkspace();
+    }
+
+    function speakSentence(idx, event) {
+      event.stopPropagation();
+      const key = `sent-${idx}`;
+      if (state.playingKey === key || state.ttsLoadingKey === key) {
+        stopSpeech();
+        return;
+      }
+      const essay = getCurrentEssay();
+      const s = essay.sentences[idx];
+      if (s) speakWithAI(s.en, { key });
+    }
+
+    function buildSentencesView(essay) {
+      const modes = [
+        { id: 'both', label: '中英对照' },
+        { id: 'hideEn', label: '看中背英（遮挡英文）' },
+        { id: 'firstLetter', label: '首字母提示' },
+        { id: 'hideZh', label: '看英译中（遮挡中文）' }
+      ];
+
+      const toolbar = `
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-800 shadow-xs mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-1.5">
+            ${modes.map(m => `
+              <button onclick="setSentenceDisplayMode('${m.id}')" class="px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
+                state.sentenceDisplayMode === m.id
+                  ? 'bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-300 dark:ring-indigo-700'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }">${m.label}</button>
+            `).join('')}
+          </div>
+          <span class="text-xs text-slate-400 dark:text-slate-500">💡 点击任意英文单词可查音标与释义</span>
+        </div>
+      `;
+
+      // Header Block (Salutation / Notice Title / Minutes Metadata)
+      const headerHtml = `
+        <div class="bg-slate-100/80 dark:bg-slate-900/60 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 mb-4 space-y-1.5">
+          <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">格式抬头</div>
+          ${essay.headerLines.map(line => `
+            <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5">
+              <span class="font-semibold text-sm sm:text-base text-slate-900 dark:text-slate-100">${escapeHtml(line.en)}</span>
+              <span class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">${escapeHtml(line.zh)}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      // Sentence Cards
+      const cardsHtml = essay.sentences.map((s, idx) => {
+        const key = `${essay.id}-${idx}`;
+        const isRevealed = state.revealedSentences.has(key);
+        const isStarred = state.starredSentences.has(key);
+
+        let enContent = '';
+        if (state.sentenceDisplayMode === 'hideEn' && !isRevealed) {
+          enContent = `
+            <div class="py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-dashed border-slate-300 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-sm flex items-center justify-between">
+              <span>点击卡片显示英文原句...</span>
+              <span class="text-xs font-medium text-indigo-500">显示</span>
+            </div>
+          `;
+        } else if (state.sentenceDisplayMode === 'firstLetter' && !isRevealed) {
+          enContent = `
+            <div class="text-base sm:text-[17px] leading-relaxed font-mono text-indigo-700 dark:text-indigo-300 bg-indigo-50/50 dark:bg-indigo-950/30 p-3 rounded-xl border border-indigo-100 dark:border-indigo-900/50">
+              ${escapeHtml(toFirstLetterHint(s.en))}
+              <div class="text-[11px] font-sans text-indigo-500 mt-1.5">点击查看完整英文</div>
+            </div>
+          `;
+        } else {
+          enContent = `<p class="text-base sm:text-[17px] leading-relaxed font-medium text-slate-900 dark:text-slate-100">${renderInteractiveEnglish(s.en, idx)}</p>`;
+        }
+
+        let zhContent = '';
+        if (state.sentenceDisplayMode === 'hideZh' && !isRevealed) {
+          zhContent = `<p class="text-sm text-slate-400 dark:text-slate-500 italic mt-2">点击卡片显示中文释义...</p>`;
+        } else {
+          zhContent = `<p class="text-sm sm:text-[15px] leading-relaxed text-slate-600 dark:text-slate-400 mt-2">${escapeHtml(s.zh)}</p>`;
+        }
+
+        const sectionHeader = s.label
+          ? `<div class="mt-5 mb-2 flex items-center gap-2"><span class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></span><span class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 px-2">${escapeHtml(s.label)}</span><span class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></span></div>`
+          : '';
+
+        return `
+          ${sectionHeader}
+          <div onclick="toggleRevealSentence('${key}')" class="group cursor-pointer bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border transition-all mb-3 ${
+            isStarred
+              ? 'border-amber-300 dark:border-amber-700/80 ring-1 ring-amber-200/60 dark:ring-amber-900/40'
+              : 'border-slate-200 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-700'
+          } shadow-xs hover:shadow-sm">
+            <div class="flex items-start justify-between gap-3 mb-2">
+              <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-lg text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                第 ${idx + 1} 句 · P${s.p}
+              </span>
+              <div class="flex items-center gap-1.5">
+                <button data-sent-audio="sent-${idx}" onclick="speakSentence(${idx}, event)" title="美音朗读此句" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 transition-colors">
+                  ${state.ttsLoadingKey === `sent-${idx}` ? '⏳' : state.playingKey === `sent-${idx}` ? '⏹️' : '🔊'}
+                </button>
+                <button onclick="toggleStarSentence('${key}', event)" title="标记难点句" class="p-1.5 rounded-lg transition-colors ${
+                  isStarred
+                    ? 'text-amber-500 bg-amber-50 dark:bg-amber-950/50'
+                    : 'text-slate-400 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }">
+                  ${isStarred ? '★' : '☆'}
+                </button>
+              </div>
+            </div>
+            ${enContent}
+            ${zhContent}
+          </div>
+        `;
+      }).join('');
+
+      // Footer Block (Sign-off)
+      const footerHtml = `
+        <div class="bg-slate-100/80 dark:bg-slate-900/60 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 mt-4 space-y-1.5">
+          <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">结尾落款</div>
+          ${essay.footerLines.map(line => `
+            <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5">
+              <span class="font-semibold text-sm sm:text-base text-slate-900 dark:text-slate-100">${escapeHtml(line.en)}</span>
+              <span class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">${escapeHtml(line.zh)}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      return toolbar + headerHtml + cardsHtml + footerHtml;
+    }
+
+    // =========================================================================
+    // 8. MODE 2: CLOZE / FILL-IN-THE-BLANKS
+    // =========================================================================
+    function setClozeDifficulty(val) {
+      state.clozeDifficulty = val;
+      state.clozeRevealed.clear();
+      state.clozeTyped = {};
+      state.clozeChecked = false;
+      renderWorkspace();
+    }
+
+    function setClozeInputMode(mode) {
+      state.clozeInputMode = mode;
+      state.clozeChecked = false;
+      renderWorkspace();
+    }
+
+    function reshuffleCloze() {
+      state.clozeSeed += 1;
+      state.clozeRevealed.clear();
+      state.clozeTyped = {};
+      state.clozeChecked = false;
+      renderWorkspace();
+      showToast('已重新随机生成挖空题目');
+    }
+
+    function toggleClozeBlank(blankKey) {
+      if (state.clozeRevealed.has(blankKey)) {
+        state.clozeRevealed.delete(blankKey);
+      } else {
+        state.clozeRevealed.add(blankKey);
+      }
+      renderWorkspace();
+    }
+
+    function revealAllCloze() {
+      document.querySelectorAll('[data-cloze-key]').forEach(el => {
+        state.clozeRevealed.add(el.dataset.clozeKey);
+      });
+      renderWorkspace();
+    }
+
+    function hideAllCloze() {
+      state.clozeRevealed.clear();
+      state.clozeTyped = {};
+      state.clozeChecked = false;
+      renderWorkspace();
+    }
+
+    function handleClozeTyping(key, value) {
+      state.clozeTyped[key] = value;
+    }
+
+    function checkClozeTyping() {
+      state.clozeChecked = true;
+      renderWorkspace();
+    }
+
+    function buildClozeView(essay) {
+      const diffs = [
+        { val: 0.25, label: '简单 (25%)' },
+        { val: 0.35, label: '标准 (35%)' },
+        { val: 0.55, label: '挑战 (55%)' }
+      ];
+
+      let seed = essay.id * 1000 + state.clozeSeed * 37;
+      let totalBlanks = 0;
+      let correctTyped = 0;
+
+      // Group sentences by paragraph
+      const paraMap = new Map();
+      essay.sentences.forEach((s, idx) => {
+        if (!paraMap.has(s.p)) paraMap.set(s.p, []);
+        paraMap.get(s.p).push({ ...s, idx });
+      });
+
+      const paragraphsHtml = Array.from(paraMap.entries()).map(([pNum, sList]) => {
+        const renderedSentences = sList.map(s => {
+          // Tokenize preserving punctuation and spaces
+          const tokens = s.en.split(/([A-Za-zÀ-ÿ'-]+)/);
+          return tokens.map((token, tIdx) => {
+            if (!/^[A-Za-zÀ-ÿ'-]+$/.test(token)) return escapeHtml(token);
+            const cleanLower = token.toLowerCase();
+            const isCandidate = token.length >= 4 && !STOP_WORDS.has(cleanLower);
+            const shouldBlank = isCandidate && seededRandom(seed++) < state.clozeDifficulty;
+
+            if (!shouldBlank) return escapeHtml(token);
+
+            totalBlanks++;
+            const bKey = `${essay.id}-${s.idx}-${tIdx}`;
+
+            if (state.clozeInputMode === 'click') {
+              const isRev = state.clozeRevealed.has(bKey);
+              return `<button type="button" data-cloze-key="${bKey}" onclick="toggleClozeBlank('${bKey}')" class="inline-block mx-0.5 px-2 py-0.5 rounded-lg font-semibold align-baseline transition-all border ${
+                isRev
+                  ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700'
+                  : 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/60'
+              }">${isRev ? escapeHtml(token) : `${escapeHtml(token[0])}${'_'.repeat(Math.min(token.length - 1, 5))}`}</button>`;
+            } else {
+              const userVal = state.clozeTyped[bKey] || '';
+              const isCorrect = userVal.trim().toLowerCase() === token.toLowerCase();
+              if (state.clozeChecked && isCorrect) correctTyped++;
+              const widthCh = Math.max(token.length + 2, 6);
+              let inputBorder = 'border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white';
+              if (state.clozeChecked) {
+                inputBorder = isCorrect
+                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'
+                  : 'border-rose-500 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300';
+              }
+              const correctionBadge = (state.clozeChecked && !isCorrect)
+                ? `<span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 ml-1">(${escapeHtml(token)})</span>`
+                : '';
+              return `<span class="inline-flex items-baseline mx-0.5"><input type="text" data-cloze-key="${bKey}" value="${escapeHtml(userVal)}" oninput="handleClozeTyping('${bKey}', this.value)" placeholder="${escapeHtml(token[0])}..." style="width:${widthCh}ch" class="px-1.5 py-0.5 text-sm sm:text-base rounded-lg border focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${inputBorder}" />${correctionBadge}</span>`;
+            }
+          }).join('');
+        }).join(' ');
+
+        const zhPara = sList.map(s => s.zh).join('');
+        return `
+          <div class="mb-5 last:mb-0">
+            <p class="text-base sm:text-[17px] leading-[2.1] text-slate-800 dark:text-slate-100">${renderedSentences}</p>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-2 pl-3 border-l-2 border-slate-200 dark:border-slate-700">${escapeHtml(zhPara)}</p>
+          </div>
+        `;
+      }).join('');
+
+      const scoreBanner = (state.clozeInputMode === 'type' && state.clozeChecked)
+        ? `<div class="mb-4 p-3.5 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 flex items-center justify-between">
+            <span class="text-sm font-semibold text-indigo-800 dark:text-indigo-200">批改结果：答对 ${correctTyped} / ${totalBlanks} 空（正确率 ${totalBlanks ? Math.round((correctTyped / totalBlanks) * 100) : 0}%）</span>
+            <button onclick="hideAllCloze()" class="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline">清空重填</button>
+          </div>`
+        : '';
+
+      return `
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-800 shadow-xs mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-1.5">
+            ${diffs.map(d => `
+              <button onclick="setClozeDifficulty(${d.val})" class="px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
+                state.clozeDifficulty === d.val
+                  ? 'bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-300 dark:ring-indigo-700'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }">${d.label}</button>
+            `).join('')}
+            <span class="mx-1 text-slate-300 dark:text-slate-700">|</span>
+            <button onclick="setClozeInputMode('click')" class="px-3 py-1.5 rounded-xl text-xs font-medium ${state.clozeInputMode === 'click' ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}">点击显隐</button>
+            <button onclick="setClozeInputMode('type')" class="px-3 py-1.5 rounded-xl text-xs font-medium ${state.clozeInputMode === 'type' ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}">拼写填空</button>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="reshuffleCloze()" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700">🔀 换一批空</button>
+            ${state.clozeInputMode === 'click'
+              ? `<button onclick="revealAllCloze()" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-700">全部显示</button>
+                 <button onclick="hideAllCloze()" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700">全部隐藏</button>`
+              : `<button onclick="checkClozeTyping()" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700">✓ 检查拼写</button>`
+            }
+          </div>
+        </div>
+
+        ${scoreBanner}
+
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 sm:p-7 border border-slate-200 dark:border-slate-800 shadow-xs">
+          <div class="mb-4 pb-3 border-b border-slate-100 dark:border-slate-800 space-y-1">
+            ${essay.headerLines.map(l => `<div class="font-semibold text-slate-900 dark:text-slate-100">${escapeHtml(l.en)}</div>`).join('')}
+          </div>
+          ${paragraphsHtml}
+          <div class="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-1">
+            ${essay.footerLines.map(l => `<div class="font-semibold text-slate-900 dark:text-slate-100">${escapeHtml(l.en)}</div>`).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // 9. MODE 3: FULL DICTATION & WORD-LEVEL DIFF CHECKER
+    // =========================================================================
+    function handleDictationInput(val) {
+      state.dictationDrafts[state.currentEssayId] = val;
+    }
+
+    function clearDictation() {
+      state.dictationDrafts[state.currentEssayId] = '';
+      state.dictationResult = null;
+      renderWorkspace();
+    }
+
+    // Longest Common Subsequence (LCS) word-level diff
+    function computeWordDiff(expectedText, userText) {
+      const normalize = w => w.toLowerCase().replace(/^[^a-z0-9]+|[^a-z0-9]+$/gi, '');
+      const expWords = expectedText.trim().split(/\s+/).filter(Boolean);
+      const usrWords = userText.trim().split(/\s+/).filter(Boolean);
+
+      const m = expWords.length;
+      const n = usrWords.length;
+      const dp = Array.from({ length: m + 1 }, () => new Int32Array(n + 1));
+
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          if (normalize(expWords[i - 1]) === normalize(usrWords[j - 1])) {
+            dp[i][j] = dp[i - 1][j - 1] + 1;
+          } else {
+            dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+          }
+        }
+      }
+
+      const diff = [];
+      let i = m, j = n;
+      let matchedCount = 0;
+
+      while (i > 0 || j > 0) {
+        if (i > 0 && j > 0 && normalize(expWords[i - 1]) === normalize(usrWords[j - 1])) {
+          diff.push({ type: 'same', text: expWords[i - 1] });
+          matchedCount++;
+          i--; j--;
+        } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+          diff.push({ type: 'extra', text: usrWords[j - 1] });
+          j--;
+        } else {
+          diff.push({ type: 'missing', text: expWords[i - 1] });
+          i--;
+        }
+      }
+
+      diff.reverse();
+      const accuracy = m > 0 ? Math.round((matchedCount / m) * 100) : 0;
+      return { diff, accuracy, matchedCount, totalExpected: m };
+    }
+
+    function gradeDictation() {
+      const essay = getCurrentEssay();
+      const userText = (state.dictationDrafts[essay.id] || '').trim();
+      if (!userText) {
+        showToast('请先在下方默写框中输入英文内容', 'error');
+        return;
+      }
+      const expectedText = getFullText(essay, 'en');
+      state.dictationResult = computeWordDiff(expectedText, userText);
+      renderWorkspace();
+      showToast(`批改完成！匹配准确率为 ${state.dictationResult.accuracy}%`, state.dictationResult.accuracy >= 85 ? 'success' : 'info');
+    }
+
+    function buildDictationView(essay) {
+      const fullZh = getFullText(essay, 'zh');
+      const draft = state.dictationDrafts[essay.id] || '';
+      const wordCount = draft.trim() ? draft.trim().split(/\s+/).length : 0;
+
+      let resultHtml = '';
+      if (state.dictationResult) {
+        const { diff, accuracy, matchedCount, totalExpected } = state.dictationResult;
+        const renderedDiff = diff.map(item => {
+          if (item.type === 'same') {
+            return `<span class="text-emerald-700 dark:text-emerald-400">${escapeHtml(item.text)}</span>`;
+          } else if (item.type === 'missing') {
+            return `<span class="px-1 rounded bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 underline decoration-amber-500 font-medium" title="漏写单词">${escapeHtml(item.text)}</span>`;
+          } else {
+            return `<span class="px-1 rounded bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 line-through" title="多写或拼错">${escapeHtml(item.text)}</span>`;
+          }
+        }).join(' ');
+
+        resultHtml = `
+          <div class="mt-5 bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
+              <div class="flex items-center gap-3">
+                <span class="text-lg font-bold ${accuracy >= 90 ? 'text-emerald-600' : accuracy >= 70 ? 'text-indigo-600' : 'text-amber-600'}">
+                  准确率 ${accuracy}%
+                </span>
+                <span class="text-xs text-slate-500">正确匹配 ${matchedCount} / ${totalExpected} 词</span>
+              </div>
+              <div class="flex items-center gap-3 text-xs">
+                <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>正确</span>
+                <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>漏写</span>
+                <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>拼错/多写</span>
+              </div>
+            </div>
+            <div class="text-sm sm:text-base leading-loose">${renderedDiff}</div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <!-- Chinese Prompt Card -->
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800">
+              <h3 class="font-bold text-sm text-slate-900 dark:text-white">参考中文提示</h3>
+              <span class="text-xs text-slate-400">对照中文默写英文</span>
+            </div>
+            <div class="text-sm sm:text-[15px] leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-line flex-1">
+              ${escapeHtml(fullZh)}
+            </div>
+          </div>
+
+          <!-- English Dictation Input Card -->
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800">
+              <h3 class="font-bold text-sm text-slate-900 dark:text-white">英文默写区</h3>
+              <span class="text-xs text-slate-500">已输入 ${wordCount} 词</span>
+            </div>
+            <textarea
+              id="dictation-textarea"
+              oninput="handleDictationInput(this.value)"
+              placeholder="在此处从头到尾默写英文范文（包含抬头、正文和落款）..."
+              rows="12"
+              class="w-full flex-1 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-sm sm:text-base leading-relaxed text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"
+            >${escapeHtml(draft)}</textarea>
+            <div class="mt-4 flex items-center justify-between gap-2">
+              <button onclick="clearDictation()" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">
+                清空重写
+              </button>
+              <button onclick="gradeDictation()" class="px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
+                ✨ 一键批改比对
+              </button>
+            </div>
+          </div>
+        </div>
+        ${resultHtml}
+      `;
+    }
+
+    // =========================================================================
+    // 10. MODE 4: FULL TEXT READER
+    // =========================================================================
+    function copyEssayText(lang) {
+      const essay = getCurrentEssay();
+      copyText(getFullText(essay, lang), lang === 'en' ? '已复制完整英文范文' : '已复制完整中文译文');
+    }
+
+    function buildFullTextView(essay) {
+      const fullEn = getFullText(essay, 'en');
+      const fullZh = getFullText(essay, 'zh');
+      const wordCount = fullEn.trim().split(/\s+/).length;
+
+      return `
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <!-- Complete English Version -->
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div class="flex items-center justify-between gap-2 pb-3 mb-4 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white">完整纯英文版</h3>
+                <p class="text-xs text-slate-500">共约 ${wordCount} 词 · 适合通读与背诵核对</p>
+              </div>
+              <button onclick="copyEssayText('en')" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60">
+                📋 复制英文
+              </button>
+            </div>
+            <div class="text-base leading-relaxed text-slate-800 dark:text-slate-100 whitespace-pre-line font-normal">
+              ${renderInteractiveEnglish(fullEn, -1)}
+            </div>
+          </div>
+
+          <!-- Complete Chinese Version -->
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div class="flex items-center justify-between gap-2 pb-3 mb-4 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white">完整中文参考译文</h3>
+                <p class="text-xs text-slate-500">对照理解行文逻辑</p>
+              </div>
+              <button onclick="copyEssayText('zh')" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">
+                📋 复制中文
+              </button>
+            </div>
+            <div class="text-sm sm:text-[15px] leading-relaxed text-slate-600 dark:text-slate-300 whitespace-pre-line">
+              ${escapeHtml(fullZh)}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // 11. INITIALIZE APPLICATION
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      // Pre-load voices for Web Speech API
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.getVoices();
+      }
+      renderAll();
+    });
+  </script>
+</body>
+</html>
